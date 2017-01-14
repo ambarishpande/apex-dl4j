@@ -75,3 +75,4 @@ public class Dl4jWorkerOperator extends BaseOperator{
     }
 
 }
+
