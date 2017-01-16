@@ -19,16 +19,10 @@ import org.junit.Test;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.slf4j.LoggerFactory;
-
-import java.util.logging.Logger;
 
 
 public class Dl4jWorkerOperatorTest {
-
-//    private static Logger log = (Logger) LoggerFactory.getLogger(Dl4jWorkerOperatorTest.class);
 
     public MultiLayerConfiguration conf;
     public DataSet dataset;
