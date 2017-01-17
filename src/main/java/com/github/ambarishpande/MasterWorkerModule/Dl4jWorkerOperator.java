@@ -39,19 +39,24 @@ public class Dl4jWorkerOperator extends BaseOperator
           model.init();
         }
         
-        while(hold)
-        {
+        if(hold) {
             buffer.add(data);
         }
-        
-        while(!(buffer.isEmpty()))
-        {
-            for ( DataSet d : buffer) {
-                model.fit(d);
-                
+
+        else{
+            if(!(buffer.isEmpty())) {
+                for ( DataSet d : buffer) {
+                    model.fit(d);
+                    buffer.remove(d);
+                }
             }
+
+            else{
+                model.fit(data);
+            }
+
         }
-        model.fit(data);
+
 
       } catch (NullArgumentException e) {
           LOG.error("Null Pointer exception" + e.getMessage());
