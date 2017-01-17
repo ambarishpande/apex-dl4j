@@ -8,6 +8,8 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by @ambarishpande on 14/1/17.
@@ -15,10 +17,10 @@ import org.nd4j.linalg.dataset.DataSet;
 public class Dl4jMasterOperator extends BaseOperator
 {
 
+  private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
+
   private MultiLayerConfiguration conf;
   private MultiLayerNetwork model;
-
-
 
   private int numWorkers;
 
@@ -30,21 +32,25 @@ public class Dl4jMasterOperator extends BaseOperator
     @Override
     public void process(DataSet dataSet)
     {
+
+      //      Send data to workers.
       outputData.emit(dataSet);
     }
   };
 
+  public transient DefaultOutputPort<INDArray> newParameters = new DefaultOutputPort<INDArray>();
 
-  public transient  DefaultOutputPort<INDArray> newParameters = new DefaultOutputPort<INDArray>();
+  //New Parameters received from Dl4jParameterAverager - Send new parameters to all the workers.
+
   public transient DefaultInputPort<INDArray> finalParameters = new DefaultInputPort<INDArray>()
   {
     @Override
     public void process(INDArray averagedParameters)
     {
-      //New Parameters received from Dl4jParameterAverager - Send new parameters to all the workers.
 
+      model.setParams(averagedParameters);
       newParameters.emit(averagedParameters);
-
+      LOG.info("Averaged Parameters sent to Workers...");
     }
   };
 
@@ -54,13 +60,20 @@ public class Dl4jMasterOperator extends BaseOperator
 
   }
 
+  public void teardown()
+  {
+    modelOutput.emit(model);
+
+  }
+
   public void setNumWorkers(int numWorkers)
   {
     this.numWorkers = numWorkers;
   }
 
-  public void teardown()
+  public void setConf(MultiLayerConfiguration conf)
   {
-
+    this.conf = conf;
   }
+
 }

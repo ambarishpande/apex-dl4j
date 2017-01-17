@@ -11,6 +11,8 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by @ambarishpande on 14/1/17.
@@ -18,8 +20,11 @@ import org.nd4j.linalg.dataset.DataSet;
 public class Dl4jWorkerOperator extends BaseOperator
 {
 
+  private static final Logger LOG = LoggerFactory.getLogger(Dl4jWorkerOperator.class);
+
   private MultiLayerConfiguration conf;
   private MultiLayerNetwork model;
+
 
   public transient DefaultInputPort<DataSet> dataPort = new DefaultInputPort<DataSet>()
   {
@@ -33,7 +38,7 @@ public class Dl4jWorkerOperator extends BaseOperator
         model.fit(data);
 
       } catch (NullArgumentException e) {
-        System.out.println("Null Pointer exception " + e.getMessage());
+          LOG.error("Null Pointer exception" + e.getMessage());
       }
 
     }
@@ -44,6 +49,8 @@ public class Dl4jWorkerOperator extends BaseOperator
     @Override
     public void process(INDArray parameters)
     {
+
+      LOG.info("Parameters received from Master...");
       model.setParams(parameters);
     }
   };
@@ -52,29 +59,31 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void setup(Context.OperatorContext context)
   {
-    System.out.println("Setup Running...");
+    LOG.info("Setup Started...");
     model = new MultiLayerNetwork(conf);
     model.init();
-    System.out.println("Setup Completed...");
-    context.
+    LOG.info("Setup Completed...");
   }
 
   public void beginWindow()
   {
-
+    //    Do Nothing
   }
 
   public void endWindow()
   {
     INDArray newParams = model.params();
     output.emit(newParams);
-    System.out.println("New Parameters given back to Master...");
+    LOG.info("New Parameters given to ParameterAverager...");
   }
 
   public void setConf(MultiLayerConfiguration conf)
   {
     this.conf = conf;
   }
-
+  public MultiLayerNetwork getModel()
+  {
+    return model;
+  }
 }
 
