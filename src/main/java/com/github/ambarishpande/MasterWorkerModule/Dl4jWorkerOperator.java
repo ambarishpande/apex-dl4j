@@ -50,11 +50,8 @@ public class Dl4jWorkerOperator extends BaseOperator
                     buffer.remove(d);
                 }
             }
-
-            else{
-                model.fit(data);
-            }
-
+            model.fit(data);
+            
         }
 
 
