@@ -41,7 +41,6 @@ public class Dl4jWorkerOperator extends BaseOperator
         }
         
         if(hold) {
-
             LOG.info("Storing Data in Buffer...");
             buffer.add(data);
         }
@@ -117,6 +116,7 @@ public class Dl4jWorkerOperator extends BaseOperator
     output.emit(newParams);
     hold = true;
     LOG.info("New Parameters given to ParameterAverager...");
+
   }
 
   public void setConf(MultiLayerConfiguration conf)
