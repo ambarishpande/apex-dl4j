@@ -13,11 +13,11 @@
 
   <properties>
     <!-- change this if you desire to use a different version of Apex Core -->
-    <apex.version>3.4.0</apex.version>
+    <apex.version>3.5.0</apex.version>
     <apex.apppackage.classpath>lib/*.jar</apex.apppackage.classpath>
-    <apex.version>3.4.0</apex.version>
+    <apex.version>3.5.0</apex.version>
     <apex.apppackage.classpath>lib/*.jar</apex.apppackage.classpath>
-    <malhar.version>3.4.0</malhar.version>
+    <malhar.version>3.5.0</malhar.version>
     <nd4j.backend>nd4j-native-platform</nd4j.backend>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <shadedClassifier>bin</shadedClassifier>
@@ -46,6 +46,29 @@
            <downloadSources>true</downloadSources>
          </configuration>
        </plugin>
+
+<plugin>
+    <artifactId>maven-resources-plugin</artifactId>
+    <version>3.0.1</version>
+    <executions>
+         <execution>
+            <id>copy-resources</id>
+            <!-- here the phase you need -->
+            <phase>package</phase>
+            <goals>
+               <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+               <outputDirectory>${basedir}/target/classes</outputDirectory>
+               <resources>          
+                    <resource>
+                        <directory>com</directory>
+                    </resource>
+               </resources>              
+            </configuration>            
+        </execution>
+     </executions>
+</plugin>
        <plugin>
          <artifactId>maven-compiler-plugin</artifactId>
          <version>3.3</version>
@@ -264,8 +287,8 @@
       <!--    
       <exclusions>
         <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-native</artifactId>
         </exclusion>
       </exclusions>
       -->
@@ -293,6 +316,13 @@
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${nd4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-native</artifactId>
+          <classifier>linux-x86_64</classifier>
+        </exclusion>
+      </exclusions> 
     </dependency>
 
 

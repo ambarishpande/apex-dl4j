@@ -14,17 +14,21 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+
 /**
  * Created by @ambarishpande on 14/1/17.
  */
 public class Dl4jWorkerOperator extends BaseOperator
 {
 
+  private long windowId;
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jWorkerOperator.class);
 
   private MultiLayerConfiguration conf;
   private MultiLayerNetwork model;
-
+  private boolean hold;
+  private ArrayList<DataSet> buffer;
 
   public transient DefaultInputPort<DataSet> dataPort = new DefaultInputPort<DataSet>()
   {
@@ -35,7 +39,24 @@ public class Dl4jWorkerOperator extends BaseOperator
         if (!model.isInitCalled()) {
           model.init();
         }
-        model.fit(data);
+        
+        if(hold) {
+            LOG.info("Storing Data in Buffer...");
+            buffer.add(data);
+        }
+
+        else{
+            if(!(buffer.isEmpty())) {
+                for ( DataSet d : buffer) {
+                    model.fit(d);
+                    buffer.remove(d);
+                  LOG.info("Fitting over buffered datasets");
+                }
+            }
+            model.fit(data);
+            LOG.info("Fitting over normal dataset...");
+        }
+
 
       } catch (NullArgumentException e) {
           LOG.error("Null Pointer exception" + e.getMessage());
@@ -52,6 +73,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
       LOG.info("Parameters received from Master...");
       model.setParams(parameters);
+      hold = false;
     }
   };
 
@@ -62,19 +84,30 @@ public class Dl4jWorkerOperator extends BaseOperator
     LOG.info("Setup Started...");
     model = new MultiLayerNetwork(conf);
     model.init();
+    hold = false;
+    buffer = new ArrayList<DataSet>();
+    LOG.info(" Worker ID : "+context.getId());
     LOG.info("Setup Completed...");
   }
 
-  public void beginWindow()
+  public void beginWindow(long windowId)
   {
     //    Do Nothing
+    LOG.info("Window Id:" + windowId);
+    this.windowId = windowId;
   }
 
   public void endWindow()
   {
-    INDArray newParams = model.params();
-    output.emit(newParams);
-    LOG.info("New Parameters given to ParameterAverager...");
+
+    if(windowId%10 == 0)
+    {
+      INDArray newParams = model.params();
+      LOG.info("New Params : " + newParams.toString());
+      output.emit(newParams);
+      hold = true;
+      LOG.info("New Parameters given to ParameterAverager...");
+    }
   }
 
   public void setConf(MultiLayerConfiguration conf)

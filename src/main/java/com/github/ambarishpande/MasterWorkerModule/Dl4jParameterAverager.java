@@ -10,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
+import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.common.util.BaseOperator;
 
 /**
  * Created by @ambarishpande on 16/1/17.
  */
 
+@OperatorAnnotation(partitionable = false)
 public class Dl4jParameterAverager extends BaseOperator
 {
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jParameterAverager.class);
@@ -33,16 +35,21 @@ public class Dl4jParameterAverager extends BaseOperator
       if (workers.size() != numWorkers) {
         workers.add(indArray);
         LOG.info("Parameters received for Worker : " + workers.size());
-      } else if (workers.size() == numWorkers) {
-        workers.add(indArray);
-        LOG.info("Parameters received for Worker : " + workers.size());
+      }
+
+      if(workers.size() == numWorkers)
+      {
+//        workers.add(indArray);
+        LOG.info("Inside elseif");
         params = Nd4j.zeros(indArray.shape());
         for (INDArray w : workers) {
           params.add(w);
           workers.remove(w);
-
+          LOG.info("Adding Worker Parameters...");
         }
         params.divi(numWorkers);
+        LOG.info("Parameters averaged");
+
         outputPara.emit(params);
         params = null;
         LOG.info("Parameters averaged and sent to Master...");
@@ -53,7 +60,10 @@ public class Dl4jParameterAverager extends BaseOperator
 
   public void setup(Context.OperatorContext context)
   {
+    LOG.info("Parameter Averager setting up...");
     workers = new ArrayList<INDArray>();
+    LOG.info("Worker size at setup : " + workers.size());
+
 
   }
 
