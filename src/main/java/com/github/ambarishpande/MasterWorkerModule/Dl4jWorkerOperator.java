@@ -41,7 +41,10 @@ public class Dl4jWorkerOperator extends BaseOperator
         }
         
         if(hold) {
+<<<<<<< HEAD
             LOG.info("Storing Data in Buffer...");
+=======
+>>>>>>> 6481992f28a2adb66a4f92a385c9fa960c123db6
             buffer.add(data);
         }
 
@@ -50,11 +53,18 @@ public class Dl4jWorkerOperator extends BaseOperator
                 for ( DataSet d : buffer) {
                     model.fit(d);
                     buffer.remove(d);
+<<<<<<< HEAD
                   LOG.info("Fitting over buffered datasets");
                 }
             }
             model.fit(data);
             LOG.info("Fitting over normal dataset...");
+=======
+                }
+            }
+            model.fit(data);
+            
+>>>>>>> 6481992f28a2adb66a4f92a385c9fa960c123db6
         }
 
 
@@ -86,7 +96,10 @@ public class Dl4jWorkerOperator extends BaseOperator
     model.init();
     hold = false;
     buffer = new ArrayList<DataSet>();
+<<<<<<< HEAD
     LOG.info(" Worker ID : "+context.getId());
+=======
+>>>>>>> 6481992f28a2adb66a4f92a385c9fa960c123db6
     LOG.info("Setup Completed...");
   }
 
@@ -99,6 +112,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void endWindow()
   {
+<<<<<<< HEAD
 
     if(windowId%10 == 0)
     {
@@ -108,6 +122,12 @@ public class Dl4jWorkerOperator extends BaseOperator
       hold = true;
       LOG.info("New Parameters given to ParameterAverager...");
     }
+=======
+    INDArray newParams = model.params();
+    output.emit(newParams);
+    hold = true;
+    LOG.info("New Parameters given to ParameterAverager...");
+>>>>>>> 6481992f28a2adb66a4f92a385c9fa960c123db6
   }
 
   public void setConf(MultiLayerConfiguration conf)
