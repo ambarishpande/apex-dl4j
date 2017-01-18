@@ -316,13 +316,13 @@
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${nd4j.version}</version>
-      <exclusions>
+      <!--exclusions>
         <exclusion>
           <groupId>org.nd4j</groupId>
           <artifactId>nd4j-native</artifactId>
           <classifier>linux-x86_64</classifier>
         </exclusion>
-      </exclusions> 
+      </exclusions--> 
     </dependency>
 
 

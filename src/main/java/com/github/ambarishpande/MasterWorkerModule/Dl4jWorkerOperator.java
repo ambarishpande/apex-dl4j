@@ -36,96 +36,92 @@ public class Dl4jWorkerOperator extends BaseOperator
     public void process(DataSet data)
     {
       try {
+
         if (!model.isInitCalled()) {
           model.init();
         }
-        
-        if(hold) {
-            LOG.info("Storing Data in Buffer...");
-            buffer.add(data);
-        }
 
-        else{
-            if(!(buffer.isEmpty())) {
-                for ( DataSet d : buffer) {
-                    model.fit(d);
-                    buffer.remove(d);
-                  LOG.info("Fitting over buffered datasets");
-                }
+        if (hold) {
+          LOG.info("Storing Data in Buffer...");
+          buffer.add(data);
+        } else {
+          if (!(buffer.isEmpty())) {
+            for (DataSet d : buffer) {
+              model.fit(d);
+              buffer.remove(d);
+              LOG.info("Fitting over buffered datasets");
             }
-            model.fit(data);
-            LOG.info("Fitting over normal dataset...");
-                }
-            }
-            model.fit(data);
-            
+          }
+          model.fit(data);
+          LOG.info("Fitting over normal dataset...");
         }
-
-
       } catch (NullArgumentException e) {
-          LOG.error("Null Pointer exception" + e.getMessage());
+        LOG.error("Null Pointer exception" + e.getMessage());
       }
 
     }
+
   };
 
-  public transient DefaultInputPort<INDArray> controlPort = new DefaultInputPort<INDArray>()
-  {
-    @Override
-    public void process(INDArray parameters)
-    {
 
-      LOG.info("Parameters received from Master...");
-      model.setParams(parameters);
-      hold = false;
-    }
+
+public transient DefaultInputPort<INDArray> controlPort=new DefaultInputPort<INDArray>()
+  {
+@Override
+public void process(INDArray parameters)
+  {
+
+  LOG.info("Parameters received from Master...");
+  model.setParams(parameters);
+  hold=false;
+  }
   };
 
-  public transient DefaultOutputPort<INDArray> output = new DefaultOutputPort<INDArray>();
+public transient DefaultOutputPort<INDArray> output=new DefaultOutputPort<INDArray>();
 
-  public void setup(Context.OperatorContext context)
+public void setup(Context.OperatorContext context)
   {
-    LOG.info("Setup Started...");
-    model = new MultiLayerNetwork(conf);
-    model.init();
-    hold = false;
-    buffer = new ArrayList<DataSet>();
-    LOG.info(" Worker ID : "+context.getId());
-    LOG.info("Setup Completed...");
+  LOG.info("Setup Started...");
+  model=new MultiLayerNetwork(conf);
+  model.init();
+  hold=false;
+  buffer=new ArrayList<DataSet>();
+  LOG.info(" Worker ID : "+context.getId());
+  LOG.info("Setup Completed...");
   }
 
-  public void beginWindow(long windowId)
+public void beginWindow(long windowId)
   {
-    //    Do Nothing
-    LOG.info("Window Id:" + windowId);
-    this.windowId = windowId;
+  //    Do Nothing
+  LOG.info("Window Id:"+windowId);
+  this.windowId=windowId;
   }
 
-  public void endWindow()
+public void endWindow()
   {
 
-    if(windowId%10 == 0)
-    {
-      INDArray newParams = model.params();
-      LOG.info("New Params : " + newParams.toString());
-      output.emit(newParams);
-      hold = true;
-      LOG.info("New Parameters given to ParameterAverager...");
-    }
-    INDArray newParams = model.params();
-    output.emit(newParams);
-    hold = true;
-    LOG.info("New Parameters given to ParameterAverager...");
+  if(windowId%10==0)
+  {
+  INDArray newParams=model.params();
+  LOG.info("New Params : "+newParams.toString());
+  output.emit(newParams);
+  hold=true;
+  LOG.info("New Parameters given to ParameterAverager...");
+  }
+  INDArray newParams=model.params();
+  output.emit(newParams);
+  hold=true;
+  LOG.info("New Parameters given to ParameterAverager...");
 
   }
 
-  public void setConf(MultiLayerConfiguration conf)
+public void setConf(MultiLayerConfiguration conf)
   {
-    this.conf = conf;
+  this.conf=conf;
   }
-  public MultiLayerNetwork getModel()
+public MultiLayerNetwork getModel()
   {
-    return model;
+  return model;
   }
-}
+  }
 
