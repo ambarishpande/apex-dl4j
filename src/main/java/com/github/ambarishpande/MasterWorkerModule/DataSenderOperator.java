@@ -20,13 +20,15 @@ public class DataSenderOperator implements InputOperator
   private DataSetIterator dataSetIterator;
 
   public transient DefaultOutputPort<DataSet> outputData = new DefaultOutputPort<DataSet>();
-
+  public DataSet d;
   @Override
   public void emitTuples()
   {
     if(dataSetIterator.next()!=null)
     {
-      outputData.emit(dataSetIterator.next());
+      d = dataSetIterator.next();
+      LOG.info("Sending Data : " + d.toString());
+      outputData.emit(d);
 
     }
     else
@@ -53,6 +55,7 @@ public class DataSenderOperator implements InputOperator
       dataSetIterator = new IrisDataSetIterator(1,150);
       LOG.info("Number of examples  :" +dataSetIterator.numExamples());
       LOG.info("Iris dataset loaded...");
+      d = new DataSet();
 
   }
 

@@ -35,6 +35,9 @@ public class Dl4jWorkerOperator extends BaseOperator
     @Override
     public void process(DataSet data)
     {
+
+      LOG.info("Here 1");
+      LOG.info(data.toString());
       try {
 
         if (!model.isInitCalled()) {
@@ -108,11 +111,6 @@ public void endWindow()
   hold=true;
   LOG.info("New Parameters given to ParameterAverager...");
   }
-  INDArray newParams=model.params();
-  output.emit(newParams);
-  hold=true;
-  LOG.info("New Parameters given to ParameterAverager...");
-
   }
 
 public void setConf(MultiLayerConfiguration conf)

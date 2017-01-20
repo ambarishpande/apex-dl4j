@@ -21,6 +21,7 @@ public class Dl4jMasterOperator extends BaseOperator
 
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
 
+
   private MultiLayerConfiguration conf;
   private MultiLayerNetwork model;
 
@@ -34,9 +35,12 @@ public class Dl4jMasterOperator extends BaseOperator
     {
 
       //      Send data to workers.
-      LOG.info("DataSet received by Master...");
-      LOG.info(dataSet.toString());
-      outputData.emit(dataSet);
+        LOG.info("DataSet received by Master...");
+        LOG.info(dataSet.toString());
+        outputData.emit(dataSet);
+
+
+
     }
   };
 

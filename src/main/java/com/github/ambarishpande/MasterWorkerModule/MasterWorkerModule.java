@@ -47,7 +47,7 @@ public class MasterWorkerModule implements StreamingApplication
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
 
 //    Add all Streams
-    dag.addStream("Data:Input-Master",inputData.outputData,Master.dataPort);
+    dag.addStream("Data:Input-Master",inputData.outputData,Master.dataPort).setLocality(DAG.Locality.CONTAINER_LOCAL);
     dag.addStream("Data:Master-Worker", Master.outputData, Worker.dataPort);
     dag.addStream("Parameters:Master-Worker", Master.newParameters, Worker.controlPort);
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
