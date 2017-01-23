@@ -6,6 +6,9 @@ import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
+
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.InputOperator;
@@ -16,23 +19,22 @@ import com.datatorrent.api.InputOperator;
 public class DataSenderOperator implements InputOperator
 {
   private static final Logger LOG = LoggerFactory.getLogger(DataSenderOperator.class);
-
   private DataSetIterator dataSetIterator;
 
-  public transient DefaultOutputPort<DataSet> outputData = new DefaultOutputPort<DataSet>();
-  public DataSet d;
+  public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
+  @FieldSerializer.Bind(JavaSerializer.class)
+  private DataSet d;
+
   @Override
   public void emitTuples()
   {
-    if(dataSetIterator.next()!=null)
-    {
+    if (dataSetIterator.next() != null) {
       d = dataSetIterator.next();
       LOG.info("Sending Data : " + d.toString());
-      outputData.emit(d);
+      DataSetWrapper dw = new DataSetWrapper(d);
+      outputData.emit(dw);
 
-    }
-    else
-    {
+    } else {
       LOG.info("End of Dataset...");
     }
   }
@@ -52,10 +54,10 @@ public class DataSenderOperator implements InputOperator
   @Override
   public void setup(Context.OperatorContext context)
   {
-      dataSetIterator = new IrisDataSetIterator(1,150);
-      LOG.info("Number of examples  :" +dataSetIterator.numExamples());
-      LOG.info("Iris dataset loaded...");
-      d = new DataSet();
+    dataSetIterator = new IrisDataSetIterator(1, 150);
+    LOG.info("Number of examples  :" + dataSetIterator.numExamples());
+    LOG.info("Iris dataset loaded...");
+    d = new DataSet();
 
   }
 

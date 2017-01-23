@@ -21,27 +21,26 @@ import com.datatorrent.common.util.BaseOperator;
 public class Dl4jParameterAverager extends BaseOperator
 {
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jParameterAverager.class);
-  
+
   private int numWorkers;
   private ArrayList<INDArray> workers;
   private INDArray params;
 
-  public transient DefaultOutputPort<INDArray> outputPara = new DefaultOutputPort<INDArray>();
-  public transient DefaultInputPort<INDArray> inputPara = new DefaultInputPort<INDArray>()
+  public transient DefaultOutputPort<INDArrayWrapper> outputPara = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultInputPort<INDArrayWrapper> inputPara = new DefaultInputPort<INDArrayWrapper>()
   {
     @Override
-    public void process(INDArray indArray)
+    public void process(INDArrayWrapper indArray)
     {
       if (workers.size() != numWorkers) {
-        workers.add(indArray);
+        workers.add(indArray.getIndArray());
         LOG.info("Parameters received for Worker : " + workers.size());
       }
 
-      if(workers.size() == numWorkers)
-      {
+      if (workers.size() == numWorkers) {
 //        workers.add(indArray);
         LOG.info("Inside elseif");
-        params = Nd4j.zeros(indArray.shape());
+        params = Nd4j.zeros(indArray.getIndArray().shape());
         for (INDArray w : workers) {
           params.add(w);
           workers.remove(w);
@@ -50,7 +49,7 @@ public class Dl4jParameterAverager extends BaseOperator
         params.divi(numWorkers);
         LOG.info("Parameters averaged");
 
-        outputPara.emit(params);
+        outputPara.emit(new INDArrayWrapper(params));
         params = null;
         LOG.info("Parameters averaged and sent to Master...");
 
@@ -63,7 +62,6 @@ public class Dl4jParameterAverager extends BaseOperator
     LOG.info("Parameter Averager setting up...");
     workers = new ArrayList<INDArray>();
     LOG.info("Worker size at setup : " + workers.size());
-
 
   }
 
