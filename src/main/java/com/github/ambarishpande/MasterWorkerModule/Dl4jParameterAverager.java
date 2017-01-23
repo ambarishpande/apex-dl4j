@@ -7,6 +7,9 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
+
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
@@ -23,7 +26,9 @@ public class Dl4jParameterAverager extends BaseOperator
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jParameterAverager.class);
 
   private int numWorkers;
+  @FieldSerializer.Bind(JavaSerializer.class)
   private ArrayList<INDArray> workers;
+  @FieldSerializer.Bind(JavaSerializer.class)
   private INDArray params;
 
   public transient DefaultOutputPort<INDArrayWrapper> outputPara = new DefaultOutputPort<INDArrayWrapper>();

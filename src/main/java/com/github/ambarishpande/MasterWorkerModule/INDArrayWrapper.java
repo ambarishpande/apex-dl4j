@@ -10,6 +10,7 @@ import com.esotericsoftware.kryo.serializers.JavaSerializer;
  */
 public class INDArrayWrapper
 {
+
   @FieldSerializer.Bind(JavaSerializer.class)
   private INDArray indArray;
 
@@ -26,5 +27,10 @@ public class INDArrayWrapper
   public INDArray getIndArray()
   {
     return indArray;
+  }
+
+  public void setIndArray(INDArray indArray)
+  {
+    this.indArray = indArray;
   }
 }

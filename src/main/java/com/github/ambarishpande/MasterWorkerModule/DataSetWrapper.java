@@ -29,4 +29,9 @@ public class DataSetWrapper
     return dataSet;
   }
 
+  public void setDataSet(DataSet dataSet)
+  {
+    this.dataSet = dataSet;
+  }
+
 }
