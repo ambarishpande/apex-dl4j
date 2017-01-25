@@ -1,6 +1,7 @@
 package com.github.ambarishpande.MasterWorkerModule;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -30,7 +31,6 @@ public class Dl4jParameterAverager extends BaseOperator
   private ArrayList<INDArray> workers;
   @FieldSerializer.Bind(JavaSerializer.class)
   private INDArray params;
-
   public transient DefaultOutputPort<INDArrayWrapper> outputPara = new DefaultOutputPort<INDArrayWrapper>();
   public transient DefaultInputPort<INDArrayWrapper> inputPara = new DefaultInputPort<INDArrayWrapper>()
   {
@@ -47,14 +47,22 @@ public class Dl4jParameterAverager extends BaseOperator
         LOG.info("Inside elseif");
         params = Nd4j.zeros(indArray.getIndArray().shape());
         for (INDArray w : workers) {
-          params.add(w);
-          workers.remove(w);
+          params = params.add(w);
           LOG.info("Adding Worker Parameters...");
         }
-        params.divi(numWorkers);
-        LOG.info("Parameters averaged");
+//        for (Iterator<INDArray> iterator = workers.iterator(); iterator.hasNext(); ) {
+//          INDArray value = iterator.next();
+//          params.add(value);
+//          LOG.info("Adding Worker Parameters...");
+//        }
+//
+        workers.clear();
+        INDArray averagedPram = params.divi(numWorkers);
 
-        outputPara.emit(new INDArrayWrapper(params));
+        LOG.info("Parameters averaged");
+        LOG.info(averagedPram.toString());
+
+        outputPara.emit(new INDArrayWrapper(averagedPram));
         params = null;
         LOG.info("Parameters averaged and sent to Master...");
 

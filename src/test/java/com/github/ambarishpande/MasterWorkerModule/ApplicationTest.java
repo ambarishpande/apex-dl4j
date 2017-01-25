@@ -21,10 +21,12 @@ public class ApplicationTest {
   public void testApplication() throws IOException, Exception {
     try {
       LocalMode lma = LocalMode.newInstance();
+
       Configuration conf = new Configuration(false);
       conf.addResource(this.getClass().getResourceAsStream("/META-INF/properties.xml"));
       lma.prepareDAG(new MasterWorkerModule(), conf);
       LocalMode.Controller lc = lma.getController();
+      lma.cloneDAG();
       lc.run(30000); // runs for 10 seconds and quits
 //      lc.run();
     } catch (ConstraintViolationException e) {

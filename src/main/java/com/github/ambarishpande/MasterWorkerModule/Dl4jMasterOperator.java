@@ -58,9 +58,13 @@ public class Dl4jMasterOperator extends BaseOperator
     public void process(INDArrayWrapper averagedParameters)
     {
 
-      model.setParams(averagedParameters.getIndArray());
-      newParameters.emit(averagedParameters);
-      LOG.info("Averaged Parameters sent to Workers...");
+
+//        model.setParams(averagedParameters.getIndArray());
+
+        newParameters.emit(averagedParameters);
+        LOG.info("Averaged Parameters sent to Workers...");
+
+
     }
   };
 
@@ -68,7 +72,7 @@ public class Dl4jMasterOperator extends BaseOperator
   {
 
     model = new MultiLayerNetwork(conf);
-
+    model.init();
   }
 
   public void beginWindow(long windowId)

@@ -28,15 +28,25 @@ public class DataSenderOperator implements InputOperator
   @Override
   public void emitTuples()
   {
-    if (dataSetIterator.next() != null) {
+    try{
       d = dataSetIterator.next();
       LOG.info("Sending Data : " + d.toString());
       DataSetWrapper dw = new DataSetWrapper(d);
       outputData.emit(dw);
 
-    } else {
-      LOG.info("End of Dataset...");
+    }catch (IllegalArgumentException e)
+    {
+      LOG.error("DataSet Complete" + e.getMessage());
+    }catch (NullPointerException e){
+      LOG.error("DataSet Complete" + e.getMessage());
+
     }
+    catch (Exception e)
+    {
+      LOG.error("DataSet Complete" + e.getMessage());
+    }
+
+
   }
 
   @Override

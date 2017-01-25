@@ -68,43 +68,43 @@ public class Dl4jWorkerOperatorTest
 
   }
 
-  @Test
-  public void testProcess()
-  {
-
-    int windowId = 0;
-    int batchSize = 10;
-    LOG.info("Number of Examples" + dataSetIterator.numExamples());
-    DataSet d;
-    for (windowId = 0; windowId < 15; windowId++) {
-      LOG.info("Window : " + windowId);
-      worker.beginWindow(windowId);
-      for (int i = windowId * batchSize; i < windowId * batchSize + batchSize; i++) {
-        d = dataSetIterator.next();
-
-        LOG.info("Examples per Dataset : " + d.numExamples());
-        LOG.info("Tuple No :" + i);
-        worker.dataPort.process(d);
-      }
-      worker.endWindow();
-      LOG.info("Received parameters from worker : " + sink.collectedTuples.toString());
-    }
-
-  }
-
-  @Test
-  public void testTrainedModel()
-  {
-
-    Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
-    dataSetIterator.reset();
-    while (dataSetIterator.hasNext()) {
-      DataSet next = dataSetIterator.next();
-      INDArray output = worker.getModel().output(next.getFeatureMatrix()); //get the networks prediction
-      eval.eval(next.getLabels(), output); //check the prediction against the true class
-    }
-    LOG.info(eval.stats());
-
-  }
+//  @Test
+//  public void testProcess()
+//  {
+//
+//    int windowId = 0;
+//    int batchSize = 10;
+//    LOG.info("Number of Examples" + dataSetIterator.numExamples());
+//    DataSet d;
+//    for (windowId = 0; windowId < 15; windowId++) {
+//      LOG.info("Window : " + windowId);
+//      worker.beginWindow(windowId);
+//      for (int i = windowId * batchSize; i < windowId * batchSize + batchSize; i++) {
+//        d = dataSetIterator.next();
+//
+//        LOG.info("Examples per Dataset : " + d.numExamples());
+//        LOG.info("Tuple No :" + i);
+//        worker.dataPort.process(d);
+//      }
+//      worker.endWindow();
+//      LOG.info("Received parameters from worker : " + sink.collectedTuples.toString());
+//    }
+//
+//  }
+//
+//  @Test
+//  public void testTrainedModel()
+//  {
+//
+//    Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
+//    dataSetIterator.reset();
+//    while (dataSetIterator.hasNext()) {
+//      DataSet next = dataSetIterator.next();
+//      INDArray output = worker.getModel().output(next.getFeatureMatrix()); //get the networks prediction
+//      eval.eval(next.getLabels(), output); //check the prediction against the true class
+//    }
+//    LOG.info(eval.stats());
+//
+//  }
 }
 
