@@ -36,7 +36,7 @@ public class Dl4jWorkerOperator extends BaseOperator
   @FieldSerializer.Bind(JavaSerializer.class)
   private ArrayList<DataSet> buffer;
 
-  private  int workerId;
+  private int workerId;
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
     @Override
@@ -54,13 +54,15 @@ public class Dl4jWorkerOperator extends BaseOperator
           LOG.info("Storing Data in Buffer...");
           buffer.add(data.getDataSet());
         } else {
-          if (!(buffer.isEmpty())) {
+          if (buffer.size() != 0) {
             for (DataSet d : buffer) {
               model.fit(d);
-              buffer.remove(d);
+//              buffer.remove(d);
               LOG.info("Fitting over buffered datasets");
             }
+            buffer.clear();
           }
+
           model.fit(data.getDataSet());
           LOG.info("Fitting over normal dataset...");
         }
@@ -80,7 +82,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
       LOG.info("Parameters received from Master...");
       model.setParams(parameters.getIndArray());
-      LOG.info("Resuming Worker " +  workerId);
+      LOG.info("Resuming Worker " + workerId);
       hold = false;
     }
   };
@@ -114,7 +116,7 @@ public class Dl4jWorkerOperator extends BaseOperator
       LOG.info("New Params : " + newParams.toString());
       output.emit(new INDArrayWrapper(newParams));
       hold = true;
-      LOG.info("Holding worker " +  workerId);
+      LOG.info("Holding worker " + workerId);
       LOG.info("New Parameters given to ParameterAverager...");
     }
   }

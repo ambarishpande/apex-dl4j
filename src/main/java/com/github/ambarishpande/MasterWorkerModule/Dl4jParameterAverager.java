@@ -50,12 +50,6 @@ public class Dl4jParameterAverager extends BaseOperator
           params = params.add(w);
           LOG.info("Adding Worker Parameters...");
         }
-//        for (Iterator<INDArray> iterator = workers.iterator(); iterator.hasNext(); ) {
-//          INDArray value = iterator.next();
-//          params.add(value);
-//          LOG.info("Adding Worker Parameters...");
-//        }
-//
         workers.clear();
         INDArray averagedPram = params.divi(numWorkers);
 
