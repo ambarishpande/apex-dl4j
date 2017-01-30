@@ -57,7 +57,6 @@ public class Dl4jWorkerOperator extends BaseOperator
           if (buffer.size() != 0) {
             for (DataSet d : buffer) {
               model.fit(d);
-//              buffer.remove(d);
               LOG.info("Fitting over buffered datasets");
             }
             buffer.clear();
@@ -80,10 +79,11 @@ public class Dl4jWorkerOperator extends BaseOperator
     public void process(INDArrayWrapper parameters)
     {
 
-      LOG.info("Parameters received from Master...");
+      LOG.info("Parameters received from Master..." + parameters.getIndArray().toString());
       model.setParams(parameters.getIndArray());
       LOG.info("Resuming Worker " + workerId);
       hold = false;
+
     }
   };
 
@@ -103,7 +103,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void beginWindow(long windowId)
   {
-    //    Do Nothing
+
     LOG.info("Window Id:" + windowId);
     this.windowId = windowId;
   }
@@ -111,7 +111,7 @@ public class Dl4jWorkerOperator extends BaseOperator
   public void endWindow()
   {
 
-    if (windowId % 10 == 0) {
+    if (windowId % 5 == 0) {
       INDArray newParams = model.params();
       LOG.info("New Params : " + newParams.toString());
       output.emit(new INDArrayWrapper(newParams));
