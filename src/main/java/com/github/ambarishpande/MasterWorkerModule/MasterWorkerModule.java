@@ -37,7 +37,7 @@ public class MasterWorkerModule implements StreamingApplication
 
     numWorkers = 2;
 //      Add all operators
-    DataSenderOperator inputData = dag.addOperator("Input Data",DataSenderOperator.class);
+    DataSenderOperator inputData = dag.addOperator("Input Data", DataSenderOperator.class);
     Dl4jMasterOperator Master = dag.addOperator("Master", Dl4jMasterOperator.class);
     Dl4jWorkerOperator Worker = dag.addOperator("Worker", Dl4jWorkerOperator.class);
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
@@ -47,7 +47,7 @@ public class MasterWorkerModule implements StreamingApplication
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
 
 //    Add all Streams
-    dag.addStream("Data:Input-Master",inputData.outputData,Master.dataPort);
+    dag.addStream("Data:Input-Master", inputData.outputData, Master.dataPort);
     dag.addStream("Data:Master-Worker", Master.outputData, Worker.dataPort);
     dag.addStream("Parameters:Master-Worker", Master.newParameters, Worker.controlPort);
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
@@ -58,25 +58,32 @@ public class MasterWorkerModule implements StreamingApplication
 
     conf = new NeuralNetConfiguration.Builder()
       .seed(123)
-      .iterations(1)
+      .iterations(2)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-      .learningRate(0.01)
+      .learningRate(0.0015)
       .updater(Updater.NESTEROVS).momentum(0.9)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(4).nOut(4)
+      .layer(0, new DenseLayer.Builder().nIn(4).nOut(10)
         .weightInit(WeightInit.XAVIER)
         .activation(Activation.RELU)
         .build())
-      .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+      .layer(1, new DenseLayer.Builder().nIn(10).nOut(20)
         .weightInit(WeightInit.XAVIER)
-        .activation(Activation.SOFTMAX).weightInit(WeightInit.XAVIER)
-        .nIn(4).nOut(3).build())
+        .activation(Activation.RELU)
+        .build())
+      .layer(2, new DenseLayer.Builder().nIn(20).nOut(10)
+        .weightInit(WeightInit.XAVIER)
+        .activation(Activation.SIGMOID)
+        .build())
+      .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+        .weightInit(WeightInit.XAVIER)
+        .activation(Activation.SOFTMAX).weightInit(WeightInit.UNIFORM)
+        .nIn(10).nOut(3).build())
       .pretrain(false).backprop(true).build();
 
     Master.setConf(conf);
     Worker.setConf(conf);
     ParameterAverager.setNumWorkers(numWorkers);
-
 
   }
 }
