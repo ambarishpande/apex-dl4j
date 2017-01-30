@@ -27,7 +27,7 @@ public class ApplicationTest {
       lma.prepareDAG(new MasterWorkerModule(), conf);
       LocalMode.Controller lc = lma.getController();
       lma.cloneDAG();
-      lc.run(30000); // runs for 10 seconds and quits
+      lc.run(); // runs for 10 seconds and quits
 //      lc.run();
     } catch (ConstraintViolationException e) {
       Assert.fail("constraint violations: " + e.getConstraintViolations());
