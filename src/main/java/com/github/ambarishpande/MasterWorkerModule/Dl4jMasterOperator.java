@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
@@ -12,11 +16,13 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.common.util.BaseOperator;
 
+import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +40,11 @@ public class Dl4jMasterOperator extends BaseOperator
 {
 
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
-
   private MultiLayerConfiguration conf;
   private MultiLayerNetwork model;
-  private int numTuples;
+  private ArrayList<DataSetWrapper> evalData;
+  private INDArrayWrapper zero;
+  private boolean first = true;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
   public transient DefaultOutputPort<MultiLayerNetwork> modelOutput = new DefaultOutputPort<MultiLayerNetwork>();
 
@@ -47,9 +54,20 @@ public class Dl4jMasterOperator extends BaseOperator
     public void process(DataSetWrapper dataSet)
     {
 
+      if(first)
+      {
+        DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+        Date dateobj = new Date();
+        LOG.info(df.format(dateobj));
+        first = false;
+      }
       //      Send data to workers.
-        LOG.info("DataSet received by Master..." + dataSet.getDataSet().toString());
-        outputData.emit(dataSet);
+      LOG.info("DataSet received by Master..." + dataSet.getDataSet().toString());
+      if(evalData.size() < 15)
+      {
+        evalData.add(dataSet);
+      }
+      outputData.emit(dataSet);
 
     }
   };
@@ -64,10 +82,33 @@ public class Dl4jMasterOperator extends BaseOperator
     public void process(INDArrayWrapper averagedParameters)
     {
 
-      model.setParams(averagedParameters.getIndArray());
+      zero = new INDArrayWrapper(Nd4j.create(averagedParameters.getIndArray().shape()));
+
+      DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+      Date dateobj = new Date();
+
+      if (model.params().eq(averagedParameters.getIndArray()) != zero) {
+        LOG.info(df.format(dateobj));
+        LOG.info("Training complete...");
+        LOG.info("Final Parameters are :" + model.params().toString());
+        LOG.info("Evaluation");
+        Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
+//        dataSetIterator.reset();
+        for (DataSetWrapper d : evalData) {
+
+          INDArrayWrapper output = new INDArrayWrapper(model.output(d.getDataSet().getFeatureMatrix())); //get the networks prediction
+          eval.eval(d.getDataSet().getLabels(), output.getIndArray()); //check the prediction against the true class
+        }
+        LOG.info(eval.stats());
+
+
+      }
+        model.setParams(averagedParameters.getIndArray());
 //     if model is trained - same averagedParameters received more than once.
-      newParameters.emit(averagedParameters);
-      LOG.info("Averaged Parameters sent to Workers...");
+        newParameters.emit(averagedParameters);
+        LOG.info("Averaged Parameters sent to Workers...");
+
+
     }
   };
 
@@ -76,30 +117,29 @@ public class Dl4jMasterOperator extends BaseOperator
 
     model = new MultiLayerNetwork(conf);
     model.init();
+    evalData = new ArrayList<>(150);
     LOG.info("Model initialized in Master...");
   }
 
-
   public void beginWindow(long windowId)
   {
-      if (windowId%15 == 0)
-      {
-        Configuration configuration = new Configuration();
+    if (windowId % 15 == 0) {
+      Configuration configuration = new Configuration();
 
-        try {
-          LOG.info("Trying to save model...");
-          FileSystem hdfs = FileSystem.newInstance( new URI( "hdfs://master:54310/" ), configuration );
-          FSDataOutputStream hdfsStream = hdfs.create(new Path("/user/hadoopuser/iris.zip"));
-          ModelSerializer.writeModel(model,hdfsStream, true);
-          LOG.info("Model saved to location");
-//
-        } catch (IOException e) {
-          e.printStackTrace();
-        } catch (URISyntaxException e) {
-          e.printStackTrace();
-        }
+      try {
+        LOG.info("Trying to save model...");
+        FileSystem hdfs = FileSystem.newInstance(new URI("hdfs://master:54310/"), configuration);
+        FSDataOutputStream hdfsStream = hdfs.create(new Path("/user/hadoopuser/iris.zip"));
+        ModelSerializer.writeModel(model, hdfsStream, true);
+        LOG.info("Model saved to location");
 
+      } catch (IOException e) {
+        e.printStackTrace();
+      } catch (URISyntaxException e) {
+        e.printStackTrace();
       }
+
+    }
   }
 
   public void endWindow()
