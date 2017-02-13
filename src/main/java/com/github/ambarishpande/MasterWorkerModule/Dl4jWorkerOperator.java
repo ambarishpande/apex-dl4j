@@ -30,12 +30,11 @@ public class Dl4jWorkerOperator extends BaseOperator
   private long windowId;
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jWorkerOperator.class);
 
+  private ApexMultiLayerNetwork model;
   private MultiLayerConfiguration conf;
-  private MultiLayerNetwork model;
   private boolean hold;
   @FieldSerializer.Bind(JavaSerializer.class)
   private ArrayList<DataSet> buffer;
-
   private int workerId;
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
@@ -43,11 +42,10 @@ public class Dl4jWorkerOperator extends BaseOperator
     public void process(DataSetWrapper data)
     {
 
-      LOG.info(data.getDataSet().toString());
       try {
 
-        if (!model.isInitCalled()) {
-          model.init();
+        if (!model.getModel().isInitCalled()) {
+          model.getModel().init();
         }
 
         if (hold) {
@@ -55,14 +53,15 @@ public class Dl4jWorkerOperator extends BaseOperator
           buffer.add(data.getDataSet());
         } else {
           if (buffer.size() != 0) {
+            LOG.info("Buffered data size : " + buffer.size());
             for (DataSet d : buffer) {
-              model.fit(d);
+              model.getModel().fit(d);
               LOG.info("Fitting over buffered datasets");
             }
             buffer.clear();
           }
 
-          model.fit(data.getDataSet());
+          model.getModel().fit(data.getDataSet());
           LOG.info("Fitting over normal dataset...");
         }
       } catch (NullArgumentException e) {
@@ -73,27 +72,26 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   };
 
-  public transient DefaultInputPort<INDArrayWrapper> controlPort = new DefaultInputPort<INDArrayWrapper>()
+  public transient DefaultInputPort<ApexMultiLayerNetwork> controlPort = new DefaultInputPort<ApexMultiLayerNetwork>()
   {
     @Override
-    public void process(INDArrayWrapper parameters)
+    public void process(ApexMultiLayerNetwork newModel)
     {
 
-      LOG.info("Parameters received from Master..." + parameters.getIndArray().toString());
-      model.setParams(parameters.getIndArray());
+      LOG.info("newModel received from Master..." + newModel.getModel().params().toString());
+      model.copy(newModel);
       LOG.info("Resuming Worker " + workerId);
       hold = false;
 
     }
   };
 
-  public transient DefaultOutputPort<INDArrayWrapper> output = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultOutputPort<ApexMultiLayerNetwork> output = new DefaultOutputPort<ApexMultiLayerNetwork>();
 
   public void setup(Context.OperatorContext context)
   {
     LOG.info("Setup Started...");
-    model = new MultiLayerNetwork(conf);
-    model.init();
+    model = new ApexMultiLayerNetwork(conf);
     hold = false;
     buffer = new ArrayList<DataSet>();
     workerId = context.getId();
@@ -103,21 +101,20 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void beginWindow(long windowId)
   {
-
     LOG.info("Window Id:" + windowId);
     this.windowId = windowId;
   }
 
   public void endWindow()
   {
-
+//  Need to change the logic for sending for averaging. Use numoftuples insted of window.
     if (windowId % 5 == 0) {
-      INDArray newParams = model.params();
+      INDArray newParams = model.getModel().params();
       LOG.info("New Params : " + newParams.toString());
-      output.emit(new INDArrayWrapper(newParams));
+      output.emit(model);
       hold = true;
       LOG.info("Holding worker " + workerId);
-      LOG.info("New Parameters given to ParameterAverager...");
+      LOG.info("New newModel given to ParameterAverager...");
     }
   }
 
@@ -126,9 +123,5 @@ public class Dl4jWorkerOperator extends BaseOperator
     this.conf = conf;
   }
 
-  public MultiLayerNetwork getModel()
-  {
-    return model;
-  }
 }
 
