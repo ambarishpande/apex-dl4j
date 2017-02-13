@@ -26,27 +26,43 @@ public class DataSenderOperator implements InputOperator
   private DataSetIterator dataSetIterator;
   private int numEpochs;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
+  public transient DefaultOutputPort<Integer> controlPort  = new DefaultOutputPort<>();
+  private int batchSize;
   @FieldSerializer.Bind(JavaSerializer.class)
   private DataSet d;
+  private  int count;
 
   @Override
   public void emitTuples()
   {
     try{
-      d = dataSetIterator.next();
+
+      if(batchSize>0)
+      {
+        if (dataSetIterator.hasNext())
+        {
+          d = dataSetIterator.next();
 //      LOG.info("Sending Data : " + d.toString());
-      DataSetWrapper dw = new DataSetWrapper(d);
-      outputData.emit(dw);
+          DataSetWrapper dw = new DataSetWrapper(d);
+          outputData.emit(dw);
+          count++;
+          batchSize--;
+        }else{
+          numEpochs--;
+          if(numEpochs > 0)
+          {
+//        Temporary solution for multiple epochs
+            LOG.info("Epoch number " + numEpochs + "Complete");
+            controlPort.emit(1);
+            dataSetIterator.reset();
+          }
+        }
+
+      }
 
     }catch (Exception e)
     {
-      numEpochs--;
-      if(numEpochs > 0)
-      {
-//        Temporary solution for multiple epochs
-        LOG.error("Epoch number " + numEpochs + "Complete" + e.getMessage());
-        dataSetIterator.reset();
-      }
+      LOG.error("Exception :" + e.getStackTrace());
 
     }
 
@@ -56,25 +72,23 @@ public class DataSenderOperator implements InputOperator
   @Override
   public void beginWindow(long l)
   {
-
+    LOG.info("Begin Window in Sender...");
+    batchSize = 5;
+    count = 0;
   }
 
   @Override
   public void endWindow()
   {
-
+    LOG.info("Emmited" + count + " tuples in window.");
   }
 
   @Override
   public void setup(Context.OperatorContext context)
   {
     dataSetIterator = new IrisDataSetIterator(10, 150);
-//    try {
-//      dataSetIterator = new RawMnistDataSetIterator(1,100);
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    }
     numEpochs = 2000;
+    count = 0;
     LOG.info("Number of examples  :" + dataSetIterator.numExamples());
     LOG.info("iris dataset loaded...");
     d = new DataSet();
