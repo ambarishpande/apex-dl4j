@@ -42,7 +42,6 @@ public class Dl4jMasterOperator extends BaseOperator
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
   private MultiLayerConfiguration conf;
   private ApexMultiLayerNetwork model;
-  private ArrayList<DataSetWrapper> evalData;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
   public transient DefaultOutputPort<ApexMultiLayerNetwork> modelOutput = new DefaultOutputPort<ApexMultiLayerNetwork>();
 
@@ -54,10 +53,6 @@ public class Dl4jMasterOperator extends BaseOperator
 
       //      Send data to workers.
       LOG.info("DataSet received by Master...");
-      if(evalData.size() < 15)
-      {
-        evalData.add(dataSet);
-      }
       outputData.emit(dataSet);
 
     }
@@ -94,7 +89,6 @@ public class Dl4jMasterOperator extends BaseOperator
   public void setup(Context.OperatorContext context)
   {
     model = new ApexMultiLayerNetwork(conf);
-    evalData = new ArrayList<>(150);
     LOG.info("Model initialized in Master...");
   }
 
