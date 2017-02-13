@@ -42,6 +42,7 @@ public class MasterWorkerModule implements StreamingApplication
     Dl4jWorkerOperator Worker = dag.addOperator("Worker", Dl4jWorkerOperator.class);
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
+    Dl4jEvaluatorOperator eval = dag.addOperator("Eval",Dl4jEvaluatorOperator.class);
 
 //    Set Operator Attributes
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
@@ -53,6 +54,8 @@ public class MasterWorkerModule implements StreamingApplication
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
     dag.addStream("Parameters:ParameterAverager-Delay", ParameterAverager.outputPara, delay.input);
     dag.addStream("Parameters:Delay-Master", delay.output, Master.finalParameters);
+    dag.addStream("Model:Master-Evaluator",Master.modelOutput,eval.modelInput).setLocality(DAG.Locality.CONTAINER_LOCAL);
+    dag.addStream("Control: Sender-Master",inputData.controlPort,Master.controlPort);
 
 //    DL4j Configurations
 
@@ -80,6 +83,7 @@ public class MasterWorkerModule implements StreamingApplication
         .activation(Activation.SOFTMAX).weightInit(WeightInit.UNIFORM)
         .nIn(10).nOut(3).build())
       .pretrain(false).backprop(true).build();
+
 
     Master.setConf(conf);
     Worker.setConf(conf);
