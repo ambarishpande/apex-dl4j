@@ -3,6 +3,7 @@ package com.github.ambarishpande.MasterWorkerModule;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.deeplearning4j.nn.api.Updater;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
@@ -28,36 +29,55 @@ public class Dl4jParameterAverager extends BaseOperator
 
   private int numWorkers;
   @FieldSerializer.Bind(JavaSerializer.class)
-  private ArrayList<INDArray> workers;
-  @FieldSerializer.Bind(JavaSerializer.class)
-  private INDArray params;
-  public transient DefaultOutputPort<INDArrayWrapper> outputPara = new DefaultOutputPort<INDArrayWrapper>();
-  public transient DefaultInputPort<INDArrayWrapper> inputPara = new DefaultInputPort<INDArrayWrapper>()
+  private ArrayList<ApexMultiLayerNetwork> workers;
+
+  public transient DefaultOutputPort<ApexMultiLayerNetwork> outputPara = new DefaultOutputPort<ApexMultiLayerNetwork>();
+  public transient DefaultInputPort<ApexMultiLayerNetwork> inputPara = new DefaultInputPort<ApexMultiLayerNetwork>()
   {
     @Override
-    public void process(INDArrayWrapper indArray)
+    public void process(ApexMultiLayerNetwork newModel)
     {
       if (workers.size() != numWorkers) {
-        workers.add(indArray.getIndArray());
+        workers.add(newModel);
         LOG.info("Parameters received for Worker : " + workers.size());
       }
 
       if (workers.size() == numWorkers) {
-//        workers.add(indArray);
+//        workers.add(newModel);
         LOG.info("Inside elseif");
-        params = Nd4j.zeros(indArray.getIndArray().shape());
-        for (INDArray w : workers) {
-          params = params.add(w);
+        INDArray params = Nd4j.zeros(newModel.getModel().params().shape());
+        Updater updater = newModel.getModel().getUpdater();
+        INDArray state = Nd4j.zeros(updater.getStateViewArray().shape());
+        double score = 0.0;
+        for (ApexMultiLayerNetwork w : workers) {
+          params = params.add(w.getModel().params()); // Adding net parameters
+          state = state.addi(w.getModel().getUpdater().getStateViewArray().dup());
+//          batchsize
+          score += w.getModel().score();
           LOG.info("Adding Worker Parameters...");
         }
         workers.clear();
+
+        // Averaging net parameters, updaters and score.
         INDArray averagedPram = params.divi(numWorkers);
+        state = state.divi(numWorkers);
+        score /= numWorkers;
 
-        LOG.info("Parameters averaged");
-        LOG.info(averagedPram.toString());
 
-        outputPara.emit(new INDArrayWrapper(averagedPram));
+        // Setting newly calculated parameters, updaters and score.
+        newModel.getModel().setParams(averagedPram);
+        updater.setStateViewArray(newModel.getModel(),state,false);
+        newModel.getModel().setScore(score);
+        newModel.setScore(score);
+
+        LOG.info("Parameters averaged : \n" + averagedPram.toString());
+        LOG.info("Updaters Averaged : \n"+updater.getStateViewArray().toString());
+        LOG.info("Score : \n" + score);
+
+        outputPara.emit(newModel);
         params = null;
+        state = null;
+
         LOG.info("Parameters averaged and sent to Master...");
 
       }
@@ -67,7 +87,7 @@ public class Dl4jParameterAverager extends BaseOperator
   public void setup(Context.OperatorContext context)
   {
     LOG.info("Parameter Averager setting up...");
-    workers = new ArrayList<INDArray>();
+    workers = new ArrayList<ApexMultiLayerNetwork>();
     LOG.info("Worker size at setup : " + workers.size());
 
   }
