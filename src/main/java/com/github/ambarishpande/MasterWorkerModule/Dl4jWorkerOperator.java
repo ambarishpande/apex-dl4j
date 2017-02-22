@@ -16,7 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ObjectOutputStream;
+import java.util.AbstractQueue;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
@@ -32,20 +37,32 @@ public class Dl4jWorkerOperator extends BaseOperator
   private ApexMultiLayerNetwork model;
   private MultiLayerConfiguration conf;
   private boolean hold;
-  private ArrayList<DataSetWrapper> buffer;
+  private Queue<DataSetWrapper> buffer;
   private int workerId;
   private int batchSize;
   private int tuplesPerWindow;
+  private int numoftuples = 0;
+
+  public int getBatchSize()
+  {
+    return batchSize;
+  }
+
+  public void setBatchSize(int batchSize)
+  {
+    this.batchSize = batchSize;
+  }
+
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
     @Override
     public void process(DataSetWrapper data)
     {
       LOG.info("Dataset received by worker " + workerId);
-    tuplesPerWindow++;
+      //tuplesPerWindow++;
       try {
 
-        if (hold) {
+        /*if (hold) {
           LOG.info("Storing Data in Buffer...");
           buffer.add(data);
         } else {
@@ -62,7 +79,40 @@ public class Dl4jWorkerOperator extends BaseOperator
 
           model.fit(data);
           LOG.info("Fitting over normal dataset...");
+            }*/
+
+        if(hold)
+        {
+            LOG.info("Storing Data in Buffer...");
+            buffer.add(data);
         }
+        else
+        {
+          while(numoftuples < batchSize)
+          {
+            if(!(buffer.isEmpty()))
+            {
+              LOG.info("Fitting over buffered datasets");
+              model.fit(buffer.remove());
+              numoftuples++;
+            }
+            else {
+              model.fit(data);
+              LOG.info("Fitting over normal dataset...");
+              numoftuples++;
+            }
+          }
+
+          LOG.info("Fitted on " + numoftuples);
+          LOG.info("Sending Model to Parameter Averager...");
+          output.emit(model);
+          hold = true;
+          LOG.info("Holding worker " + workerId);
+          LOG.info("New newModel given to ParameterAverager...");
+          numoftuples = 0;
+
+        }
+
       } catch (NullArgumentException e) {
         LOG.error("Null Pointer exception" + e.getMessage());
       }
@@ -95,9 +145,9 @@ public class Dl4jWorkerOperator extends BaseOperator
     LOG.info("Setup Started...");
     model = new ApexMultiLayerNetwork(conf);
     hold = false;
-    buffer = new ArrayList<DataSetWrapper>();
+    buffer = new LinkedList<>();
     workerId = context.getId();
-    batchSize = 5;
+    //batchSize = 5;
     LOG.info(" Worker ID : " + context.getId());
     LOG.info("Setup Completed...");
   }
@@ -112,7 +162,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void endWindow()
   {
-//  Need to change the logic for sending for averaging. Use numoftuples insted of window.
+/*  Need to change the logic for sending for averaging. Use numoftuples insted of window.
     LOG.info("Tuples in window " + windowId + " :" + tuplesPerWindow);
     if(windowId%3==0)
       {
@@ -123,7 +173,7 @@ public class Dl4jWorkerOperator extends BaseOperator
         hold = true;
         LOG.info("Holding worker " + workerId);
         LOG.info("New newModel given to ParameterAverager...");
-      }
+      }  */
 
 
   }
@@ -132,6 +182,8 @@ public class Dl4jWorkerOperator extends BaseOperator
   {
     this.conf = conf;
   }
+
+
 
 }
 
