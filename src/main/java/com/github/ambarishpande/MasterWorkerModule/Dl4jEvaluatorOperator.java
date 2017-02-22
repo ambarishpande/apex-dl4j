@@ -82,7 +82,6 @@ public class Dl4jEvaluatorOperator extends BaseOperator
           {
             LOG.info("Queue size : " + emitQueue.size());
             model = emitQueue.removeFirst();
-
             LOG.info("Evaluating model " + model.getModel().params().toString());
           dataSetIterator.reset();
           Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
@@ -109,8 +108,9 @@ public class Dl4jEvaluatorOperator extends BaseOperator
 //              }
 //
 //            }
-            LOG.info(eval.stats());
+          //  LOG.info(eval.stats());
           }
+            LOG.info(eval.stats());
           }
 
         }
