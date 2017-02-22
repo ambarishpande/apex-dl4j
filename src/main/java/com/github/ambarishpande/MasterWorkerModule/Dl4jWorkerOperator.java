@@ -29,39 +29,38 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   private long windowId;
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jWorkerOperator.class);
-
   private ApexMultiLayerNetwork model;
   private MultiLayerConfiguration conf;
   private boolean hold;
-  @FieldSerializer.Bind(JavaSerializer.class)
-  private ArrayList<DataSet> buffer;
+  private ArrayList<DataSetWrapper> buffer;
   private int workerId;
+  private int batchSize;
+  private int tuplesPerWindow;
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
     @Override
     public void process(DataSetWrapper data)
     {
-
+      LOG.info("Dataset received by worker " + workerId);
+    tuplesPerWindow++;
       try {
-
-        if (!model.getModel().isInitCalled()) {
-          model.getModel().init();
-        }
 
         if (hold) {
           LOG.info("Storing Data in Buffer...");
-          buffer.add(data.getDataSet());
+          buffer.add(data);
         } else {
           if (buffer.size() != 0) {
+
             LOG.info("Buffered data size : " + buffer.size());
-            for (DataSet d : buffer) {
-              model.getModel().fit(d);
-              LOG.info("Fitting over buffered datasets");
+            for (DataSetWrapper d : buffer) {
+                model.fit(d);
+                LOG.info("Fitting over buffered datasets");
             }
+
             buffer.clear();
           }
 
-          model.getModel().fit(data.getDataSet());
+          model.fit(data);
           LOG.info("Fitting over normal dataset...");
         }
       } catch (NullArgumentException e) {
@@ -79,7 +78,9 @@ public class Dl4jWorkerOperator extends BaseOperator
     {
 
       LOG.info("newModel received from Master..." + newModel.getModel().params().toString());
-      model.copy(newModel);
+//      model.copy(newModel);
+      model = newModel;
+      LOG.info("Model set in worker ..."+ model.getModel().params().toString());
       LOG.info("Resuming Worker " + workerId);
       hold = false;
 
@@ -90,11 +91,13 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   public void setup(Context.OperatorContext context)
   {
+
     LOG.info("Setup Started...");
     model = new ApexMultiLayerNetwork(conf);
     hold = false;
-    buffer = new ArrayList<DataSet>();
+    buffer = new ArrayList<DataSetWrapper>();
     workerId = context.getId();
+    batchSize = 5;
     LOG.info(" Worker ID : " + context.getId());
     LOG.info("Setup Completed...");
   }
@@ -103,19 +106,26 @@ public class Dl4jWorkerOperator extends BaseOperator
   {
     LOG.info("Window Id:" + windowId);
     this.windowId = windowId;
+    tuplesPerWindow = 0;
+
   }
 
   public void endWindow()
   {
 //  Need to change the logic for sending for averaging. Use numoftuples insted of window.
-    if (windowId % 5 == 0) {
-      INDArray newParams = model.getModel().params();
-      LOG.info("New Params : " + newParams.toString());
-      output.emit(model);
-      hold = true;
-      LOG.info("Holding worker " + workerId);
-      LOG.info("New newModel given to ParameterAverager...");
-    }
+    LOG.info("Tuples in window " + windowId + " :" + tuplesPerWindow);
+    if(windowId%3==0)
+      {
+//        INDArray newParams = model.getModel().params();
+//        LOG.info("New Params : " + newParams.toString());
+        LOG.info("Sending Model to Parameter Averager...");
+        output.emit(model);
+        hold = true;
+        LOG.info("Holding worker " + workerId);
+        LOG.info("New newModel given to ParameterAverager...");
+      }
+
+
   }
 
   public void setConf(MultiLayerConfiguration conf)
