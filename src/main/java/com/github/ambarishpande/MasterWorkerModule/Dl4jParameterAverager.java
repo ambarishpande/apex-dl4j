@@ -30,6 +30,7 @@ public class Dl4jParameterAverager extends BaseOperator
   private int numWorkers;
   @FieldSerializer.Bind(JavaSerializer.class)
   private ArrayList<ApexMultiLayerNetwork> workers;
+  private int initVal;
 
   public transient DefaultOutputPort<ApexMultiLayerNetwork> outputPara = new DefaultOutputPort<ApexMultiLayerNetwork>();
   public transient DefaultInputPort<ApexMultiLayerNetwork> inputPara = new DefaultInputPort<ApexMultiLayerNetwork>()
@@ -49,13 +50,17 @@ public class Dl4jParameterAverager extends BaseOperator
         Updater updater = newModel.getModel().getUpdater();
         INDArray state = Nd4j.zeros(updater.getStateViewArray().shape());
         double score = 0.0;
+        int count = 0;
         for (ApexMultiLayerNetwork w : workers) {
           params = params.add(w.getModel().params()); // Adding net parameters
           state = state.addi(w.getModel().getUpdater().getStateViewArray().dup());
 //          batchsize
+          count+= w.getCount();
           score += w.getModel().score();
           LOG.info("Adding Worker Parameters...");
         }
+        count = count - (numWorkers-1)*initVal;
+        initVal = count;
         workers.clear();
 
         // Averaging net parameters, updaters and score.
@@ -64,11 +69,13 @@ public class Dl4jParameterAverager extends BaseOperator
         score /= numWorkers;
 
 
+
         // Setting newly calculated parameters, updaters and score.
         newModel.getModel().setParams(averagedPram);
         updater.setStateViewArray(newModel.getModel(),state,false);
         newModel.getModel().setScore(score);
         newModel.setScore(score);
+        newModel.setCount(count);
 
         LOG.info("Parameters averaged : \n" + averagedPram.toString());
         LOG.info("Updaters Averaged : \n"+updater.getStateViewArray().toString());
@@ -88,6 +95,7 @@ public class Dl4jParameterAverager extends BaseOperator
   {
     LOG.info("Parameter Averager setting up...");
     workers = new ArrayList<ApexMultiLayerNetwork>();
+    initVal = 0;
     LOG.info("Worker size at setup : " + workers.size());
 
   }
