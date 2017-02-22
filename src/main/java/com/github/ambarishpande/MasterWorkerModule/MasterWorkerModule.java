@@ -44,8 +44,12 @@ public class MasterWorkerModule implements StreamingApplication
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
     Dl4jEvaluatorOperator eval = dag.addOperator("Eval",Dl4jEvaluatorOperator.class);
 
+    RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
+    rrCodec.setN(numWorkers);
+
 //    Set Operator Attributes
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
+    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC,rrCodec);
 
 //    Add all Streams
     dag.addStream("Data:Input-Master", inputData.outputData, Master.dataPort);
@@ -54,8 +58,7 @@ public class MasterWorkerModule implements StreamingApplication
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
     dag.addStream("Parameters:ParameterAverager-Delay", ParameterAverager.outputPara, delay.input);
     dag.addStream("Parameters:Delay-Master", delay.output, Master.finalParameters);
-    dag.addStream("Model:Master-Evaluator",Master.modelOutput,eval.modelInput).setLocality(DAG.Locality.CONTAINER_LOCAL);
-    dag.addStream("Control: Sender-Master",inputData.controlPort,Master.controlPort);
+    dag.addStream("Model:Master-Evaluator",Master.modelOutput,eval.modelInput);
 
 //    DL4j Configurations
 
