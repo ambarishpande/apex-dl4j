@@ -21,6 +21,7 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.impl.transforms.Log;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,12 +43,9 @@ public class Dl4jMasterOperator extends BaseOperator
 
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
   private MultiLayerConfiguration conf;
-  private MultiLayerNetwork model;
-  private ArrayList<DataSetWrapper> evalData;
-  private INDArrayWrapper zero;
-  private boolean first = true;
+  private ApexMultiLayerNetwork model;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
-  public transient DefaultOutputPort<MultiLayerNetwork> modelOutput = new DefaultOutputPort<MultiLayerNetwork>();
+  public transient DefaultOutputPort<ApexMultiLayerNetwork> modelOutput = new DefaultOutputPort<ApexMultiLayerNetwork>();
 
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
@@ -54,90 +53,79 @@ public class Dl4jMasterOperator extends BaseOperator
     public void process(DataSetWrapper dataSet)
     {
 
-      if(first)
-      {
-        DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-        Date dateobj = new Date();
-        LOG.info(df.format(dateobj));
-        first = false;
-      }
       //      Send data to workers.
-      LOG.info("DataSet received by Master..." + dataSet.getDataSet().toString());
-      if(evalData.size() < 15)
-      {
-        evalData.add(dataSet);
-      }
+      LOG.info("DataSet received by Master...");
+      LOG.info("Sending Dataset to workers...");
       outputData.emit(dataSet);
-
+      LOG.info("DataSet Sent to Workers...");
     }
   };
+
+
 
   //  Port to send new parameters to worker.
-  public transient DefaultOutputPort<INDArrayWrapper> newParameters = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultOutputPort<ApexMultiLayerNetwork> newParameters = new DefaultOutputPort<ApexMultiLayerNetwork>();
 
   //New Parameters received from Dl4jParameterAverager - Send new parameters to all the workers.
-  public transient DefaultInputPort<INDArrayWrapper> finalParameters = new DefaultInputPort<INDArrayWrapper>()
+  public transient DefaultInputPort<ApexMultiLayerNetwork> finalParameters = new DefaultInputPort<ApexMultiLayerNetwork>()
   {
     @Override
-    public void process(INDArrayWrapper averagedParameters)
+    public void process(ApexMultiLayerNetwork newModel)
     {
-
-      zero = new INDArrayWrapper(Nd4j.create(averagedParameters.getIndArray().shape()));
-
-      DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-      Date dateobj = new Date();
-
-      if (model.params().eq(averagedParameters.getIndArray()) != zero) {
-        LOG.info(df.format(dateobj));
-        LOG.info("Training complete...");
-        LOG.info("Final Parameters are :" + model.params().toString());
-        LOG.info("Evaluation");
-        Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
-//        dataSetIterator.reset();
-        for (DataSetWrapper d : evalData) {
-
-          INDArrayWrapper output = new INDArrayWrapper(model.output(d.getDataSet().getFeatureMatrix())); //get the networks prediction
-          eval.eval(d.getDataSet().getLabels(), output.getIndArray()); //check the prediction against the true class
-        }
-        LOG.info(eval.stats());
-
-
+      LOG.info("Received Model at Master..." + newModel.getModel().params().toString());
+//        LOG.info("Fitted over " + newModel.getCount() + " examples.");
+      if(newModel.getCount() % 3 == 0)
+      {
+//        LOG.info("Epoch complete...");
+        LOG.info("Sending Model to Evaluator...");
+        modelOutput.emit(newModel);
+        LOG.info("Model Sent To evaluator.");
       }
-        model.setParams(averagedParameters.getIndArray());
-//     if model is trained - same averagedParameters received more than once.
-        newParameters.emit(averagedParameters);
-        LOG.info("Averaged Parameters sent to Workers...");
-
+//      model.copy(newModel);
+      model = newModel;
+      LOG.info("Model set in master..." + model.getModel().params().toString());
+      LOG.info("Sending model to Workers...");
+      newParameters.emit(newModel);
+      LOG.info("Model Sent To Workers...");
+      LOG.info("Averaged Parameters sent to Workers...");
 
     }
   };
+
 
   public void setup(Context.OperatorContext context)
   {
-
-    model = new MultiLayerNetwork(conf);
-    model.init();
-    evalData = new ArrayList<>(150);
+    model = new ApexMultiLayerNetwork(conf);
     LOG.info("Model initialized in Master...");
+// Code for fetching saved model in case master is killed.
+//    Path location = new Path("/user/hadoopuser/iris.zip");
+//    Configuration configuration = new Configuration();
+//
+//    try {
+//      FileSystem hdfs = FileSystem.newInstance(new URI("hdfs://master:54310/"), configuration);
+//      if(hdfs.exists(location))
+//      {
+//        FSDataInputStream hdfsInputStream = hdfs.open(location);
+//        model.setModel(ModelSerializer.restoreMultiLayerNetwork(hdfsInputStream));
+//      }
+//
+//
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    } catch (URISyntaxException e) {
+//      e.printStackTrace();
+//    }
+//
+
   }
 
   public void beginWindow(long windowId)
   {
-    if (windowId % 15 == 0) {
-      Configuration configuration = new Configuration();
-
-      try {
-        LOG.info("Trying to save model...");
-        FileSystem hdfs = FileSystem.newInstance(new URI("hdfs://master:54310/"), configuration);
-        FSDataOutputStream hdfsStream = hdfs.create(new Path("/user/hadoopuser/iris.zip"));
-        ModelSerializer.writeModel(model, hdfsStream, true);
-        LOG.info("Model saved to location");
-
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (URISyntaxException e) {
-        e.printStackTrace();
-      }
+    if(windowId%10==0)
+    {
+      LOG.info("Sending Model to Evaluator...");
+      modelOutput.emit(model);
+      LOG.info("Model Sent To evaluator.");
 
     }
   }
@@ -145,8 +133,6 @@ public class Dl4jMasterOperator extends BaseOperator
   public void endWindow()
   {
 
-//    LOG.info("Final Model Parameters : " + model.params().toString());
-//    modelOutput.emit(model);
   }
 
   public void teardown()
@@ -156,7 +142,7 @@ public class Dl4jMasterOperator extends BaseOperator
 
   public void setConf(MultiLayerConfiguration conf)
   {
-    this.conf = conf;
+      this.conf = conf;
   }
 
 }
