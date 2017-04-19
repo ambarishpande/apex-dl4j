@@ -9,6 +9,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
@@ -16,21 +17,24 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.common.util.BaseOperator;
 
+import org.deeplearning4j.datasets.iterator.impl.IrisDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.dataset.api.DataSet;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
 
 /**
  * Created by @ambarishpande on 14/1/17.
@@ -41,32 +45,34 @@ public class Dl4jMasterOperator extends BaseOperator
 
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jMasterOperator.class);
   private MultiLayerConfiguration conf;
+  @FieldSerializer.Bind(JavaSerializer.class)
   private MultiLayerNetwork model;
-  private ArrayList<DataSetWrapper> evalData;
-  private INDArrayWrapper zero;
-  private boolean first = true;
+  private String filename;
+  private String saveLocation;
+  private boolean first;
+  private Evaluation eval;
+  //  private Thread t;
+  private double startTime;
+  private int numOfClasses;
+  private int numberOfExamples;
+  DataSetIterator dataSetIterator;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
-  public transient DefaultOutputPort<MultiLayerNetwork> modelOutput = new DefaultOutputPort<MultiLayerNetwork>();
-
+  //  public transient DefaultOutputPort<INDArrayWrapper> modelOutput = new DefaultOutputPort<INDArrayWrapper>();
+//public transient DefaultOutputPort<ApexMultiLayerNetwork> modelOutput = new DefaultOutputPort<ApexMultiLayerNetwork>();
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
     @Override
     public void process(DataSetWrapper dataSet)
     {
 
-      if(first)
-      {
-        DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-        Date dateobj = new Date();
-        LOG.info(df.format(dateobj));
+      if (first) {
+        LOG.info("Training started...");
+        startTime = System.currentTimeMillis();
         first = false;
       }
-      //      Send data to workers.
-      LOG.info("DataSet received by Master..." + dataSet.getDataSet().toString());
-      if(evalData.size() < 15)
-      {
-        evalData.add(dataSet);
-      }
+      numberOfExamples++;
+      INDArray output = model.output(dataSet.getDataSet().getFeatureMatrix()); //get the networks prediction
+      eval.eval(dataSet.getDataSet().getLabels(), output); //check the prediction against the true class
       outputData.emit(dataSet);
 
     }
@@ -82,32 +88,27 @@ public class Dl4jMasterOperator extends BaseOperator
     public void process(INDArrayWrapper averagedParameters)
     {
 
-      zero = new INDArrayWrapper(Nd4j.create(averagedParameters.getIndArray().shape()));
+      model.setParams(averagedParameters.getIndArray());
+//      modelQueue.add(model);
+      LOG.info("Training Accuracy : " + eval.accuracy());
 
-      DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-      Date dateobj = new Date();
+//      ModelSaver saver = new ModelSaver();
+//      t = new Thread(saver);
+//      t.start();
+//      dataSetIterator.reset();
+//      Evaluation eval2 = new Evaluation(3);
+//      DataSet next = dataSetIterator.next();
+//      INDArray output = model.output(next.getFeatureMatrix()); //get the networks prediction
+//      eval2.eval(next.getLabels(), output); //check the prediction against the true class
+      double time = System.currentTimeMillis() - startTime;
+      LOG.info("Number of Examples : " + numberOfExamples);
+      LOG.info("Time Taken To Train : " + time);
+//      LOG.info(eval2.stats());
 
-      if (model.params().eq(averagedParameters.getIndArray()) != zero) {
-        LOG.info(df.format(dateobj));
-        LOG.info("Training complete...");
-        LOG.info("Final Parameters are :" + model.params().toString());
-        LOG.info("Evaluation");
-        Evaluation eval = new Evaluation(3); //create an evaluation object with 10 possible classes
-//        dataSetIterator.reset();
-        for (DataSetWrapper d : evalData) {
+//          modelOutput.emit(averagedParameters);
 
-          INDArrayWrapper output = new INDArrayWrapper(model.output(d.getDataSet().getFeatureMatrix())); //get the networks prediction
-          eval.eval(d.getDataSet().getLabels(), output.getIndArray()); //check the prediction against the true class
-        }
-        LOG.info(eval.stats());
-
-
-      }
-        model.setParams(averagedParameters.getIndArray());
-//     if model is trained - same averagedParameters received more than once.
-        newParameters.emit(averagedParameters);
-        LOG.info("Averaged Parameters sent to Workers...");
-
+      newParameters.emit(averagedParameters);
+      LOG.info("Averaged Parameters sent to Workers...");
 
     }
   };
@@ -117,40 +118,48 @@ public class Dl4jMasterOperator extends BaseOperator
 
     model = new MultiLayerNetwork(conf);
     model.init();
-    evalData = new ArrayList<>(150);
+    first = true;
+    eval = new Evaluation(numOfClasses);
     LOG.info("Model initialized in Master...");
+    dataSetIterator = new IrisDataSetIterator(150, 150);
+    numberOfExamples = 0;
+
   }
 
-  public void beginWindow(long windowId)
+  public void setFilename(String filename)
   {
-    if (windowId % 15 == 0) {
-      Configuration configuration = new Configuration();
+    this.filename = filename;
+  }
 
+  public void saveModel()
+  {
+
+    Configuration configuration = new Configuration();
+    DateFormat df = new SimpleDateFormat("dd-MM-yy-HH-mm-ss");
+    Date dateobj = new Date();
+    try {
+      LOG.info("Trying to save model...");
+      FileSystem hdfs = FileSystem.newInstance(new URI(configuration.get("fs.defaultFS")), configuration);
+      FSDataOutputStream hdfsStream = hdfs.create(new Path(saveLocation + df.format(dateobj) + "-" + filename));
+      ModelSerializer.writeModel(model, hdfsStream, false);
+      LOG.info("Model saved to Hdfs");
+
+    } catch (IOException e) {
+//        e.printStackTrace();
+      File locationToSave = new File(saveLocation + df.format(dateobj) + "-" + filename);
+      boolean saveUpdater = false;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
       try {
-        LOG.info("Trying to save model...");
-        FileSystem hdfs = FileSystem.newInstance(new URI("hdfs://master:54310/"), configuration);
-        FSDataOutputStream hdfsStream = hdfs.create(new Path("/user/hadoopuser/iris.zip"));
-        ModelSerializer.writeModel(model, hdfsStream, true);
-        LOG.info("Model saved to location");
 
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (URISyntaxException e) {
-        e.printStackTrace();
+        ModelSerializer.writeModel(model, locationToSave, saveUpdater);
+      } catch (IOException e1) {
+        e1.printStackTrace();
       }
 
+      LOG.info("Model saved locally...");
+
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
     }
-  }
-
-  public void endWindow()
-  {
-
-//    LOG.info("Final Model Parameters : " + model.params().toString());
-//    modelOutput.emit(model);
-  }
-
-  public void teardown()
-  {
 
   }
 
@@ -159,4 +168,66 @@ public class Dl4jMasterOperator extends BaseOperator
     this.conf = conf;
   }
 
+  public String getSaveLocation()
+  {
+    return saveLocation;
+  }
+
+  public void setSaveLocation(String saveLocation)
+  {
+    this.saveLocation = saveLocation;
+  }
+
+  public int getNumOfClasses()
+  {
+    return numOfClasses;
+  }
+
+  public void setNumOfClasses(int numOfClasses)
+  {
+    this.numOfClasses = numOfClasses;
+  }
+
+  public class ModelSaver implements Runnable
+  {
+
+    @Override
+    public void run()
+    {
+
+      LOG.info("Thread Started..");
+//      dataSetIterator.reset();
+
+//      Save Model
+      Configuration configuration = new Configuration();
+      DateFormat df = new SimpleDateFormat("dd-MM-yy-HH-mm-ss");
+      Date dateobj = new Date();
+      try {
+        LOG.info("Trying to save model...");
+        FileSystem hdfs = FileSystem.newInstance(new URI(configuration.get("fs.defaultFS")), configuration);
+        FSDataOutputStream hdfsStream = hdfs.create(new Path(saveLocation + df.format(dateobj) + "-" + filename));
+        ModelSerializer.writeModel(model, hdfsStream, false);
+        LOG.info("Model saved to Hdfs");
+
+      } catch (IOException e) {
+        e.printStackTrace();
+      } catch (URISyntaxException e) {
+        e.printStackTrace();
+        File locationToSave = new File(saveLocation + filename);
+        boolean saveUpdater = true;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
+        try {
+
+          ModelSerializer.writeModel(model, locationToSave, saveUpdater);
+        } catch (IOException e1) {
+          e1.printStackTrace();
+        }
+
+        LOG.info("Model saved locally...");
+      }
+
+      LOG.info("Thread Finished..");
+
+    }
+  }
 }
+
