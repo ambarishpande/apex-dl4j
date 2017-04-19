@@ -13,5 +13,14 @@
   </property>
   -->
 
+
+  <property>
+    <name>dt.application.*.attr.CONTAINER_JVM_OPTIONS</name>
+    <value>-Xmx2g -Xmx2g -Xloggc:/home/hadoopuser/hadoop/logs/gc/gc_%p.log  -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+UseG1GC </value>
+  </property>
+
+
+
+
 </configuration>
 
