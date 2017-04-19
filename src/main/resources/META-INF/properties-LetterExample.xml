@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<configuration>
+  <!-- 
+  <property>
+    <name>dt.application.{appName}.operator.{opName}.prop.{propName}</name>
+    <value>some-default-value (if value is not specified, it is required from the user or custom config when launching)</value>
+  </property>
+  -->
+  <!-- memory assigned to app master
+  <property>
+    <name>dt.attr.MASTER_MEMORY_MB</name>
+    <value>1024</value>
+  </property>
+  -->
+
+  <property>
+    <name>dt.application.*.attr.CONTAINER_JVM_OPTIONS</name>
+    <value>-Xmx2g -Xmx2g -XX:+UseG1GC </value>
+  </property>
+
+  <!--<property>-->
+    <!--<name>dt.application.MnistExample.operator.fileInput.prop.directory</name>&ndash;&gt;-->
+    <!--<value>/user/dl4j/mnist/</value>-->
+  <!--</property>-->
+  <!--<property>-->
+    <!--<name>dt.application.MnistExample.operator.fileInput.prop.directory</name>&ndash;&gt;-->
+    <!--<value>/user/apex/comcsv/</value>-->
+  <!--</property>-->
+  <!--<property>-->
+  <!--<name>dt.application.LetterExample.operator.fileInput.prop.directory</name>-->
+  <!--<value>/user/hadoopuser/letter/</value>-->
+  <!--</property>-->
+  <property>
+    <name>dt.application.LetterExample.operator.fileInput.prop.directory</name>
+    <value>/home/hadoopuser/letter/</value>
+  </property>
+  <property>
+    <name>dt.application.LetterExample.operator.fileInput.prop.emitBatchSize</name>
+    <value>1</value>
+  </property>
+
+
+  <property>
+    <name>dt.application.LetterExample.operator.Worker.prop.batchSize</name>
+    <value>32</value>
+  </property>
+
+
+  <property>
+    <name>dt.application.LetterExample.operator.Master.prop.saveLocation</name>
+    <value>/home/hadoopuser/iris/</value>
+  </property>
+
+  <property>
+    <name>dt.application.LetterExample.operator.Master.prop.filename</name>
+    <value>letter-model.zip</value>
+  </property>
+
+  <property>
+    <name>dt.application.LetterExample.operator.ParameterAverager.prop.numWorkers</name>
+    <value>2</value>
+  </property>
+
+  <property>
+    <name>dt.application.LetterExample.operator.Master.prop.numOfClasses</name>
+    <value>26</value>
+  </property>
+
+
+</configuration>
+

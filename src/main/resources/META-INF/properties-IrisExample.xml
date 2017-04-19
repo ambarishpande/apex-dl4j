@@ -19,34 +19,43 @@
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.Worker.prop.batchSize</name>
+    <name>dt.application.IrisExample.operator.Worker.prop.batchSize</name>
     <value>16</value>
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.inputData.prop.numEpochs</name>
+    <name>dt.application.IrisExample.operator.inputData.prop.numEpochs</name>
     <value>2000</value>
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.Master.prop.saveLocation</name>
+    <name>dt.application.IrisExample.operator.Master.prop.saveLocation</name>
     <value>/home/hadoopuser/iris/</value>
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.Master.prop.filename</name>
+    <name>dt.application.IrisExample.operator.Master.prop.filename</name>
     <value>iris3.zip</value>
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.ParameterAverager.prop.numWorkers</name>
+    <name>dt.application.IrisExample.operator.ParameterAverager.prop.numWorkers</name>
     <value>2</value>
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.Master.prop.numOfClasses</name>
+    <name>dt.application.IrisExample.operator.Master.prop.numOfClasses</name>
     <value>3</value>
   </property>
 
+  <property>
+    <name>dt.application.IrisExample.operator.inputData.prop.tuplesPerWindow</name>
+    <value>100</value>
+  </property>
+
+  <property>
+    <name>dt.application.IrisExample.operator.inputData.prop.sendBatchSize</name>
+    <value>1</value>
+  </property>
 </configuration>
 
