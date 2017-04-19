@@ -36,6 +36,12 @@ public class  ApexMultiLayerNetwork
     this.model = new MultiLayerNetwork(conf);
     model.init();
 
+   }
+
+  public ApexMultiLayerNetwork(MultiLayerNetwork network)
+  {
+    this.model = network;
+    this.conf = network.getLayerWiseConfigurations();
   }
 
   public void fit(DataSetWrapper dataSet)
