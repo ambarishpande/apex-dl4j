@@ -23,8 +23,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <shadedClassifier>bin</shadedClassifier>
     <java.version>1.7</java.version>
-    <nd4j.version>0.7.2</nd4j.version>
-    <dl4j.version>0.7.2</dl4j.version>
+    <nd4j.version>0.8.0</nd4j.version>
+    <dl4j.version>0.8.0</dl4j.version>
     <datavec.version>0.7.2</datavec.version>
     <arbiter.version>0.7.2</arbiter.version>
     <rl4j.version>0.7.2</rl4j.version>
@@ -39,14 +39,14 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-eclipse-plugin</artifactId>
-        <version>2.9</version>
-        <configuration>
-          <downloadSources>true</downloadSources>
-        </configuration>
-      </plugin>
+      <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-eclipse-plugin</artifactId>-->
+        <!--<version>2.9</version>-->
+        <!--<configuration>-->
+          <!--<downloadSources>true</downloadSources>-->
+        <!--</configuration>-->
+      <!--</plugin>-->
 
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
@@ -96,7 +96,8 @@
             <configuration>
               <outputDirectory>target/deps</outputDirectory>
               <includeScope>runtime</includeScope>
-            </configuration>
+              <excludeArtifactIds>opencv</excludeArtifactIds>
+             </configuration>
           </execution>
         </executions>
       </plugin>
@@ -110,6 +111,12 @@
           <shadedArtifactAttached>true</shadedArtifactAttached>
           <shadedClassifierName>bin</shadedClassifierName>
           <filters>
+            <!--<filter>-->
+              <!--<artifact>org.bytedeco.javacpp-presets:openblas</artifact>-->
+              <!--<includes>-->
+                <!--<include></include>-->
+              <!--</includes>-->
+            <!--</filter>-->
             <filter>
               <artifact>*:*</artifact>
               <excludes>
@@ -127,6 +134,45 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.bytedeco.javacpp-presets:leptonica</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:opencv</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:ffmpeg</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:flycapture</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:libdc1394</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:libfreenect</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:librealsense</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:videoinput</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:artoolkitplus</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:flandmark</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:openblas:jar:mac*</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:openblas:jar:linux-arm*</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:openblas:jar:linux-ppc*</exclude>
+                  <exclude>org.freemarker</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:openblas:jar:and*</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:openblas:jar:win*</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:libfreenect2</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:opencv-platform</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:hdf5*</exclude>
+                  <exclude>org.bytedeco.javacpp-presets:leptonica-platform</exclude>
+                  <exclude>org.deeplearning4j:deeplearning4j-ui-components</exclude>
+                  <exclude>com.github.jai-imageio:jai-imageio-core</exclude>
+                  <exclude>com.clearspring.analytics</exclude>
+                  <exclude>it.unimi.dsi</exclude>
+                  <exclude>org.tukaani</exclude>
+                  <exclude>org.bytedeco:javacv</exclude>
+                  <exclude>com.twelvemonkeys.imageio</exclude>
+                  <exclude>com.twelvemonkeys.common</exclude>
+                  <exclude>org.projectlombok</exclude>
+                  <exclude>org.nd4j:nd4j-native:jar:and*</exclude>
+                  <exclude>org.nd4j:nd4j-native:jar:mac*</exclude>
+                  <exclude>org.nd4j:nd4j-native:jar:win*</exclude>
+                  <exclude>org.nd4j:nd4j-native:jar:linux-ppc*</exclude>
+                  <exclude>org.nd4j:nd4j-native:jar:linux-arm*</exclude>
+
+                </excludes>
+              </artifactSet>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
@@ -300,6 +346,7 @@
                   <includes>
                     <include>${project.artifactId}-${project.version}-javadoc.xml</include>
                   </includes>
+
                   <filtering>true</filtering>
                 </resource>
               </resources>
@@ -316,7 +363,7 @@
     <dependency>
       <groupId>org.apache.apex</groupId>
       <artifactId>malhar-library</artifactId>
-      <version>3.3.0-incubating</version>
+      <version>3.5.0</version>
       <!-- 
            If you know that your application does not need transitive dependencies pulled in by malhar-library,
            uncomment the following to reduce the size of your app package.
@@ -352,14 +399,15 @@
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${nd4j.version}</version>
-      <!--exclusions>
-        <exclusion>
-          <groupId>org.nd4j</groupId>
-          <artifactId>nd4j-native</artifactId>
-          <classifier>linux-x86_64</classifier>
-        </exclusion>
-      </exclusions-->
+      <exclusions>
+         <!--<exclusion>-->
+          <!--<groupId>org.nd4j</groupId>-->
+          <!--<artifactId>nd4j-native</artifactId>-->
+          <!--&lt;!&ndash;<classifier>linux-x86_64</classifier>&ndash;&gt;-->
+        <!--</exclusion>-->
+      </exclusions>
     </dependency>
+
 
 
     <!-- https://mvnrepository.com/artifact/org.deeplearning4j/deeplearning4j-core -->
@@ -367,14 +415,21 @@
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-core</artifactId>
       <version>${dl4j.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>*</groupId>-->
+          <!--<artifactId>*</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.datavec/datavec-api -->
-    <dependency>
-      <groupId>org.datavec</groupId>
-      <artifactId>datavec-api</artifactId>
-      <version>${datavec.version}</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.datavec</groupId>-->
+      <!--<artifactId>datavec-api</artifactId>-->
+      <!--<version>${datavec.version}</version>-->
+      <!--<scope>provided</scope>-->
+    <!--</dependency>-->
 
   </dependencies>
 
