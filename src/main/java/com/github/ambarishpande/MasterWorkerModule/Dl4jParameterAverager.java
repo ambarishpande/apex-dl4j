@@ -1,6 +1,9 @@
 package com.github.ambarishpande.MasterWorkerModule;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -25,7 +28,6 @@ import com.datatorrent.common.util.BaseOperator;
 public class Dl4jParameterAverager extends BaseOperator
 {
   private static final Logger LOG = LoggerFactory.getLogger(Dl4jParameterAverager.class);
-
   private int numWorkers;
   @FieldSerializer.Bind(JavaSerializer.class)
   private ArrayList<INDArray> workers;
@@ -54,9 +56,9 @@ public class Dl4jParameterAverager extends BaseOperator
         INDArray averagedPram = params.divi(numWorkers);
 
         LOG.info("Parameters averaged");
-        LOG.info(averagedPram.toString());
 
         outputPara.emit(new INDArrayWrapper(averagedPram));
+
         params = null;
         LOG.info("Parameters averaged and sent to Master...");
 
@@ -69,7 +71,11 @@ public class Dl4jParameterAverager extends BaseOperator
     LOG.info("Parameter Averager setting up...");
     workers = new ArrayList<INDArray>();
     LOG.info("Worker size at setup : " + workers.size());
+  }
 
+  public int getNumWorkers()
+  {
+    return numWorkers;
   }
 
   public void setNumWorkers(int n)
