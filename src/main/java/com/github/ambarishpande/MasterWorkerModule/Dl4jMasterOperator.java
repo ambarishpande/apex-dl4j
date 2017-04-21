@@ -55,10 +55,9 @@ public class Dl4jMasterOperator extends BaseOperator
   private double startTime;
   private int numOfClasses;
   private int numberOfExamples;
-  DataSetIterator dataSetIterator;
   public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
-  //  public transient DefaultOutputPort<INDArrayWrapper> modelOutput = new DefaultOutputPort<INDArrayWrapper>();
-//public transient DefaultOutputPort<ApexMultiLayerNetwork> modelOutput = new DefaultOutputPort<ApexMultiLayerNetwork>();
+//  public transient DefaultOutputPort<INDArrayWrapper> modelOutput = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultOutputPort<MultiLayerNetwork> modelOutput = new DefaultOutputPort<MultiLayerNetwork>();
   public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
   {
     @Override
@@ -89,24 +88,11 @@ public class Dl4jMasterOperator extends BaseOperator
     {
 
       model.setParams(averagedParameters.getIndArray());
-//      modelQueue.add(model);
       LOG.info("Training Accuracy : " + eval.accuracy());
-
-//      ModelSaver saver = new ModelSaver();
-//      t = new Thread(saver);
-//      t.start();
-//      dataSetIterator.reset();
-//      Evaluation eval2 = new Evaluation(3);
-//      DataSet next = dataSetIterator.next();
-//      INDArray output = model.output(next.getFeatureMatrix()); //get the networks prediction
-//      eval2.eval(next.getLabels(), output); //check the prediction against the true class
+      modelOutput.emit(model);
       double time = System.currentTimeMillis() - startTime;
       LOG.info("Number of Examples : " + numberOfExamples);
       LOG.info("Time Taken To Train : " + time);
-//      LOG.info(eval2.stats());
-
-//          modelOutput.emit(averagedParameters);
-
       newParameters.emit(averagedParameters);
       LOG.info("Averaged Parameters sent to Workers...");
 
@@ -121,7 +107,6 @@ public class Dl4jMasterOperator extends BaseOperator
     first = true;
     eval = new Evaluation(numOfClasses);
     LOG.info("Model initialized in Master...");
-    dataSetIterator = new IrisDataSetIterator(150, 150);
     numberOfExamples = 0;
 
   }
@@ -142,6 +127,8 @@ public class Dl4jMasterOperator extends BaseOperator
       FileSystem hdfs = FileSystem.newInstance(new URI(configuration.get("fs.defaultFS")), configuration);
       FSDataOutputStream hdfsStream = hdfs.create(new Path(saveLocation + df.format(dateobj) + "-" + filename));
       ModelSerializer.writeModel(model, hdfsStream, false);
+      hdfsStream.flush();
+      hdfsStream.close();
       LOG.info("Model saved to Hdfs");
 
     } catch (IOException e) {
@@ -188,46 +175,5 @@ public class Dl4jMasterOperator extends BaseOperator
     this.numOfClasses = numOfClasses;
   }
 
-  public class ModelSaver implements Runnable
-  {
-
-    @Override
-    public void run()
-    {
-
-      LOG.info("Thread Started..");
-//      dataSetIterator.reset();
-
-//      Save Model
-      Configuration configuration = new Configuration();
-      DateFormat df = new SimpleDateFormat("dd-MM-yy-HH-mm-ss");
-      Date dateobj = new Date();
-      try {
-        LOG.info("Trying to save model...");
-        FileSystem hdfs = FileSystem.newInstance(new URI(configuration.get("fs.defaultFS")), configuration);
-        FSDataOutputStream hdfsStream = hdfs.create(new Path(saveLocation + df.format(dateobj) + "-" + filename));
-        ModelSerializer.writeModel(model, hdfsStream, false);
-        LOG.info("Model saved to Hdfs");
-
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (URISyntaxException e) {
-        e.printStackTrace();
-        File locationToSave = new File(saveLocation + filename);
-        boolean saveUpdater = true;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
-        try {
-
-          ModelSerializer.writeModel(model, locationToSave, saveUpdater);
-        } catch (IOException e1) {
-          e1.printStackTrace();
-        }
-
-        LOG.info("Model saved locally...");
-      }
-
-      LOG.info("Thread Finished..");
-
-    }
-  }
 }
 
