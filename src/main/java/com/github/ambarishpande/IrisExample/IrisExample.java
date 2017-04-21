@@ -6,15 +6,18 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jMasterOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jParameterAverager;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jWorkerOperator;
+import com.github.ambarishpande.MasterWorkerModule.ModelSaverOperator;
 import com.github.ambarishpande.MasterWorkerModule.RoundRobinStreamCodec;
 
 import com.datatorrent.api.Context;
@@ -42,19 +45,26 @@ public class IrisExample implements StreamingApplication
     Dl4jWorkerOperator Worker = dag.addOperator("Worker", Dl4jWorkerOperator.class);
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
+    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
 
     RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
     rrCodec.setN(numWorkers);
 
+    CustomSerializableStreamCodec<MultiLayerNetwork> codec = new CustomSerializableStreamCodec<MultiLayerNetwork>();
+
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
     dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, rrCodec);
 
+    dag.setInputPortAttribute(saver.modelInput, Context.PortContext.STREAM_CODEC, codec);
+
     dag.addStream("Data:InputData-Master", inputData.outputData, Master.dataPort);
     dag.addStream("Data:Master-Worker", Master.outputData, Worker.dataPort);
+    dag.addStream("Model:Master-Saver",Master.modelOutput,saver.modelInput);
     dag.addStream("Parameters:Master-Worker", Master.newParameters, Worker.controlPort);
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
     dag.addStream("Parameters:ParameterAverager-Delay", ParameterAverager.outputPara, delay.input);
     dag.addStream("Parameters:Delay-Master", delay.output, Master.finalParameters);
+
 
     //    DL4j Configurations
 
