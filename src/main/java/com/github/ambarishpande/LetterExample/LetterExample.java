@@ -6,12 +6,15 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jMasterOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jParameterAverager;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jWorkerOperator;
@@ -44,13 +47,25 @@ public class LetterExample implements StreamingApplication
     Dl4jWorkerOperator Worker = dag.addOperator("Worker", Dl4jWorkerOperator.class);
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
-//    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
+    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
 
     RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
     rrCodec.setN(numWorkers);
 
+    CustomSerializableStreamCodec<MultiLayerNetwork> codecMLN = new CustomSerializableStreamCodec<MultiLayerNetwork>();
+    CustomSerializableStreamCodec<DataSet> codecDataSet = new CustomSerializableStreamCodec<DataSet>();
+
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
     dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, rrCodec);
+
+    dag.setInputPortAttribute(saver.modelInput, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(ParameterAverager.inputPara, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(Master.finalParameters, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(Worker.controlPort, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(delay.input, Context.PortContext.STREAM_CODEC, codecMLN);
+
+    dag.setInputPortAttribute(Master.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
+//    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
 
     dag.addStream("Data:Input-Tokenizer", inputData.output, tokenizer.input).setLocality(DAG.Locality.CONTAINER_LOCAL);
     dag.addStream("Data:Tokenizer-Master", tokenizer.output, Master.dataPort);
@@ -59,7 +74,7 @@ public class LetterExample implements StreamingApplication
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
     dag.addStream("Parameters:ParameterAverager-Delay", ParameterAverager.outputPara, delay.input).setLocality(DAG.Locality.CONTAINER_LOCAL);
     dag.addStream("Parameters:Delay-Master", delay.output, Master.finalParameters);
-//    dag.addStream("Parameters:Master-Saver",Master.modelOutput,saver.modelInput).setLocality(DAG.Locality.CONTAINER_LOCAL);
+    dag.addStream("Parameters:Master-Saver",Master.modelOutput,saver.modelInput).setLocality(DAG.Locality.CONTAINER_LOCAL);
 
     MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
       .seed(123)

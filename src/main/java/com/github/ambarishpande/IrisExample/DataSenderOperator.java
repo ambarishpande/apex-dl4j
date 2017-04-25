@@ -23,7 +23,7 @@ public class DataSenderOperator implements InputOperator
   @FieldSerializer.Bind(JavaSerializer.class)
   private DataSetIterator dataSetIterator;
   private int numEpochs;
-  public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
+  public transient DefaultOutputPort<DataSet> outputData = new DefaultOutputPort<DataSet>();
   @FieldSerializer.Bind(JavaSerializer.class)
   private DataSet d;
   private int count;
@@ -37,8 +37,8 @@ public class DataSenderOperator implements InputOperator
       try {
         d = dataSetIterator.next();
 //      LOG.info("Sending Data : " + d.toString());
-        DataSetWrapper dw = new DataSetWrapper(d);
-        outputData.emit(dw);
+//        DataSetWrapper dw = new DataSetWrapper(d);
+        outputData.emit(d);
         count++;
       } catch (Exception e) {
         numEpochs--;
