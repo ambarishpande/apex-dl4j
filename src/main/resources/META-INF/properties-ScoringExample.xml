@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<configuration>
+  <!-- 
+  <property>
+    <name>dt.application.{appName}.operator.{opName}.prop.{propName}</name>
+    <value>some-default-value (if value is not specified, it is required from the user or custom config when launching)</value>
+  </property>
+  -->
+  <!-- memory assigned to app master
+  <property>
+    <name>dt.attr.MASTER_MEMORY_MB</name>
+    <value>1024</value>
+  </property>
+  -->
+
+  <property>
+    <name>dt.application.*.attr.CONTAINER_JVM_OPTIONS</name>
+    <value>-Xmx2g -XX:+UseG1GC </value>
+  </property>
+
+  <property>
+    <name>dt.application.ScoringExample.operator.Data.prop.numEpochs</name>
+    <value>1</value>
+  </property>
+
+  <property>
+    <name>dt.application.ScoringExample.operator.Data.prop.sendBatchSize</name>
+    <value>1</value>
+  </property>
+
+  <property>
+    <name>dt.application.ScoringExample.operator.Data.prop.tuplesPerWindow</name>
+    <value>1</value>
+  </property>
+  
+  <property>
+    <name>dt.application.ScoringExample.operator.Scorer.prop.modelFilePath</name>
+    <value>/user/ambarish/iris/</value>
+  </property>
+
+  <property>
+    <name>dt.application.ScoringExample.operator.Scorer.prop.modelFileName</name>
+    <value>25-09-17-11-58-06-iris.zip</value>
+  </property>
+
+
+  <property>
+    <name>dt.application.ScoringExample.operator.*.port.input.attr.STREAM_CODEC</name>
+    <value>com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec</value>
+  </property>
+
+</configuration>
+
