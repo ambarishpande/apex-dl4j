@@ -18,7 +18,7 @@ import com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec
 import com.github.ambarishpande.MasterWorkerModule.Dl4jMasterOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jParameterAverager;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jWorkerOperator;
-import com.github.ambarishpande.MasterWorkerModule.ModelSaverOperator;
+import com.github.ambarishpande.MasterWorkerModule.Dl4jModelSaverOperator;
 import com.github.ambarishpande.MasterWorkerModule.RoundRobinStreamCodec;
 
 import com.datatorrent.api.Context;
@@ -46,7 +46,7 @@ public class IrisExample implements StreamingApplication
     Dl4jWorkerOperator Worker = dag.addOperator("Worker", Dl4jWorkerOperator.class);
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
-    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
+    Dl4jModelSaverOperator saver = dag.addOperator("Saver",Dl4jModelSaverOperator.class);
 
     RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
     rrCodec.setN(numWorkers);

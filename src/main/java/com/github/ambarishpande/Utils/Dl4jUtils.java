@@ -9,14 +9,22 @@ import org.deeplearning4j.util.ModelSerializer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
+
 
 /**
  * Created by ambarish on 25/9/17.
  */
 public class Dl4jUtils
 {
+  /**
+   * Util method to read saved dl4j model from hdfs.
+   * @param path
+   * @return
+   */
   public static MultiLayerNetwork readModelFromHdfs(String path)
   {
 
@@ -28,6 +36,8 @@ public class Dl4jUtils
       if (hdfs.exists(location)) {
         FSDataInputStream hdfsInputStream = hdfs.open(location);
         MultiLayerNetwork restored = ModelSerializer.restoreMultiLayerNetwork(hdfsInputStream);
+        hdfsInputStream.close();
+        hdfs.close();
         return restored;
       }
     } catch (IOException e) {
@@ -36,5 +46,31 @@ public class Dl4jUtils
       e.printStackTrace();
     }
     return null;
+  }
+
+  /**
+   * Util method to save trained model on hdfs.
+   * @param model
+   * @param path
+   * @return
+   */
+  public static boolean writeModelToHdfs(MultiLayerNetwork model, String path){
+    Configuration  configuration = new Configuration();
+    try {
+      FileSystem hdfs = FileSystem.newInstance(new URI(configuration.get("fs.defaultFS")), configuration);
+      FSDataOutputStream hdfsStream = hdfs.create(new Path(path));
+      ModelSerializer.writeModel(model, hdfsStream, false);
+      hdfsStream.close();
+      hdfs.close();
+      return  true;
+
+    } catch (IOException e) {
+      e.printStackTrace();
+
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
+
+    return false;
   }
 }
