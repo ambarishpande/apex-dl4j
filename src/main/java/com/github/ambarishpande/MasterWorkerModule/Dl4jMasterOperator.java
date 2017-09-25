@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import com.datatorrent.api.AutoMetric;
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
@@ -23,7 +24,8 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.api.DataSet;
+import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,20 +50,26 @@ public class Dl4jMasterOperator extends BaseOperator
   @FieldSerializer.Bind(JavaSerializer.class)
   private MultiLayerNetwork model;
   private String filename;
+  @AutoMetric
   private String saveLocation;
   private boolean first;
   private Evaluation eval;
   //  private Thread t;
   private double startTime;
   private int numOfClasses;
+  @AutoMetric
   private int numberOfExamples;
-  public transient DefaultOutputPort<DataSetWrapper> outputData = new DefaultOutputPort<DataSetWrapper>();
+  @AutoMetric
+  private double trainingAccuracy;
+  @AutoMetric
+  private double time;
+  public transient DefaultOutputPort<DataSet> outputData = new DefaultOutputPort<DataSet>();
 //  public transient DefaultOutputPort<INDArrayWrapper> modelOutput = new DefaultOutputPort<INDArrayWrapper>();
   public transient DefaultOutputPort<MultiLayerNetwork> modelOutput = new DefaultOutputPort<MultiLayerNetwork>();
-  public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
+  public transient DefaultInputPort<DataSet> dataPort = new DefaultInputPort<DataSet>()
   {
     @Override
-    public void process(DataSetWrapper dataSet)
+    public void process(DataSet dataSet)
     {
 
       if (first) {
@@ -70,30 +78,33 @@ public class Dl4jMasterOperator extends BaseOperator
         first = false;
       }
       numberOfExamples++;
-      INDArray output = model.output(dataSet.getDataSet().getFeatureMatrix()); //get the networks prediction
-      eval.eval(dataSet.getDataSet().getLabels(), output); //check the prediction against the true class
+      INDArray output = model.output(dataSet.getFeatureMatrix()); //get the networks prediction
+      eval.eval(dataSet.getLabels(), output); //check the prediction against the true class
       outputData.emit(dataSet);
+
 
     }
   };
 
   //  Port to send new parameters to worker.
-  public transient DefaultOutputPort<INDArrayWrapper> newParameters = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultOutputPort<MultiLayerNetwork> newParameters = new DefaultOutputPort<MultiLayerNetwork>();
 
   //New Parameters received from Dl4jParameterAverager - Send new parameters to all the workers.
-  public transient DefaultInputPort<INDArrayWrapper> finalParameters = new DefaultInputPort<INDArrayWrapper>()
+  public transient DefaultInputPort<MultiLayerNetwork> finalParameters = new DefaultInputPort<MultiLayerNetwork>()
   {
     @Override
-    public void process(INDArrayWrapper averagedParameters)
+    public void process(MultiLayerNetwork newModel)
     {
 
-      model.setParams(averagedParameters.getIndArray());
-      LOG.info("Training Accuracy : " + eval.accuracy());
+      model = newModel.clone();
+//      model.setParams(averagedParameters.getIndArray());
+      trainingAccuracy = eval.accuracy();
+      LOG.info("Training Accuracy : " + trainingAccuracy);
       modelOutput.emit(model);
-      double time = System.currentTimeMillis() - startTime;
+      time = System.currentTimeMillis() - startTime;
       LOG.info("Number of Examples : " + numberOfExamples);
       LOG.info("Time Taken To Train : " + time);
-      newParameters.emit(averagedParameters);
+      newParameters.emit(model);
       LOG.info("Averaged Parameters sent to Workers...");
 
     }

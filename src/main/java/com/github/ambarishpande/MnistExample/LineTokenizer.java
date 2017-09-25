@@ -20,7 +20,7 @@ public class LineTokenizer extends BaseOperator
 {
 
   private int tuplesPerWindow = 5;
-  public final transient DefaultOutputPort<DataSetWrapper> output = new DefaultOutputPort<>();
+  public final transient DefaultOutputPort<DataSet> output = new DefaultOutputPort<>();
   //public final transient DefaultOutputPort<String> outputNegative = new DefaultOutputPort<>();
 
   public final transient DefaultInputPort<String> input = new DefaultInputPort<String>()
@@ -65,8 +65,8 @@ public class LineTokenizer extends BaseOperator
 //            System.out.println("Data is :" + arr);
         DataSet d = new DataSet(arr, label);
 ///            System.out.print(d);
-        DataSetWrapper dw = new DataSetWrapper(d);
-        output.emit(dw);
+//        DataSetWrapper dw = new DataSetWrapper(d);
+        output.emit(d);
 
 
 

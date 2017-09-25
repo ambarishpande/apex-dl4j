@@ -6,12 +6,15 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jEvaluatorOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jMasterOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jParameterAverager;
@@ -48,25 +51,35 @@ public class MnistExample implements StreamingApplication
     Dl4jParameterAverager ParameterAverager = dag.addOperator("Parameter Averager", Dl4jParameterAverager.class);
     DefaultDelayOperator delay = dag.addOperator("Delay", DefaultDelayOperator.class);
 //    Dl4jEvaluatorOperator eval = dag.addOperator("Eval",Dl4jEvaluatorOperator.class);
-//    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
+    ModelSaverOperator saver = dag.addOperator("Saver",ModelSaverOperator.class);
 
     RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
     rrCodec.setN(numWorkers);
 
-//    Set Operator Attributes
+    CustomSerializableStreamCodec<MultiLayerNetwork> codecMLN = new CustomSerializableStreamCodec<MultiLayerNetwork>();
+    CustomSerializableStreamCodec<DataSet> codecDataSet = new CustomSerializableStreamCodec<DataSet>();
+
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
-    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC,rrCodec);
+    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, rrCodec);
+
+    dag.setInputPortAttribute(saver.modelInput, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(ParameterAverager.inputPara, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(Master.finalParameters, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(Worker.controlPort, Context.PortContext.STREAM_CODEC, codecMLN);
+    dag.setInputPortAttribute(delay.input, Context.PortContext.STREAM_CODEC, codecMLN);
+
+    dag.setInputPortAttribute(Master.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
+//    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
 
 //    Add all Streams
     dag.addStream("Data:Input-Tokenizer", inputData.output, tokenizer.input).setLocality(DAG.Locality.CONTAINER_LOCAL);
     dag.addStream("Data:Tokenizer-Master",tokenizer.output, Master.dataPort);
     dag.addStream("Data:Master-Worker", Master.outputData, Worker.dataPort);
+    dag.addStream("Model:Master-Saver",Master.modelOutput,saver.modelInput);
     dag.addStream("Parameters:Master-Worker", Master.newParameters, Worker.controlPort);
     dag.addStream("Parameters:Worker-ParameterAverager", Worker.output, ParameterAverager.inputPara);
     dag.addStream("Parameters:ParameterAverager-Delay", ParameterAverager.outputPara, delay.input);
     dag.addStream("Parameters:Delay-Master", delay.output, Master.finalParameters);
-//    dag.addStream("Model:Master-Evaluator",Master.modelOutput,eval.modelInput);
-//    dag.addStream("Parameters:Master-Saver",Master.modelOutput,saver.modelInput);
 //    DL4j Configurations
 
     conf = new NeuralNetConfiguration.Builder()
@@ -93,13 +106,9 @@ public class MnistExample implements StreamingApplication
       .build();
 
 
+
     Master.setConf(conf);
     Worker.setConf(conf);
 
-//    ParameterAverager.setNumWorkers(numWorkers);
-//    Worker.setBatchSize(32);
-//    saver.setConf(conf);
-//    saver.setSaveLocation("/user/hadoopuser/mnist/");
-//    saver.setFilename("mnist-1.zip");
   }
 }

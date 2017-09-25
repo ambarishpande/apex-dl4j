@@ -38,17 +38,19 @@ public class Dl4jWorkerOperator extends BaseOperator
   private MultiLayerNetwork model;
   private boolean hold;
   //  private ArrayList<DataSet> buffer;
-  private Queue<DataSetWrapper> buffer;
+  private Queue<DataSet> buffer;
   private int batchSize;
   private int tuplesPerWindow;
   private int numOfTuples = 0;
   private int workerId;
-  public transient DefaultInputPort<DataSetWrapper> dataPort = new DefaultInputPort<DataSetWrapper>()
+  int count;
+  public transient DefaultInputPort<DataSet> dataPort = new DefaultInputPort<DataSet>()
   {
-    @Override
-    public void process(DataSetWrapper data)
-    {
 
+    @Override
+    public void process(DataSet data)
+    {
+      count++;
       double start = System.currentTimeMillis();
       try {
 
@@ -60,12 +62,12 @@ public class Dl4jWorkerOperator extends BaseOperator
 
             if (!(buffer.isEmpty())) {
               LOG.info("Fitting over buffered datasets");
-              DataSet d = buffer.remove().getDataSet();
+              DataSet d = buffer.remove();
               model.fit(d);
               numOfTuples++;
 
             } else {
-              model.fit(data.getDataSet());
+              model.fit(data);
               LOG.info("Fitting over normal dataset...");
               numOfTuples++;
 
@@ -75,7 +77,7 @@ public class Dl4jWorkerOperator extends BaseOperator
 
           LOG.info("Fitted on " + numOfTuples);
           LOG.info("Sending Model to Parameter Averager...");
-          output.emit(new INDArrayWrapper(model.params()));
+          output.emit(model);
           hold = true;
           LOG.info("Holding worker " + workerId);
           LOG.info("New newModel given to ParameterAverager...");
@@ -93,21 +95,21 @@ public class Dl4jWorkerOperator extends BaseOperator
 
   };
 
-  public transient DefaultInputPort<INDArrayWrapper> controlPort = new DefaultInputPort<INDArrayWrapper>()
+  public transient DefaultInputPort<MultiLayerNetwork> controlPort = new DefaultInputPort<MultiLayerNetwork>()
   {
     @Override
-    public void process(INDArrayWrapper parameters)
+    public void process(MultiLayerNetwork newModel)
     {
 
       LOG.info("Parameters received from Master...");
-      model.setParams(parameters.getIndArray());
+      model = newModel.clone();
       LOG.info("Resuming Worker " + workerId);
       hold = false;
 
     }
   };
 
-  public transient DefaultOutputPort<INDArrayWrapper> output = new DefaultOutputPort<INDArrayWrapper>();
+  public transient DefaultOutputPort<MultiLayerNetwork> output = new DefaultOutputPort<MultiLayerNetwork>();
 
   public void setup(Context.OperatorContext context)
   {
@@ -115,6 +117,7 @@ public class Dl4jWorkerOperator extends BaseOperator
     model = new MultiLayerNetwork(conf);
     model.init();
     hold = false;
+    count = 0;
     tuplesPerWindow = 5;
     buffer = new LinkedList<>();
     workerId = context.getId();
@@ -128,6 +131,10 @@ public class Dl4jWorkerOperator extends BaseOperator
     this.windowId = windowId;
   }
 
+  public void endWindow(){
+    LOG.info("Worker : " + workerId + " processed " + count +" tuples in window "+ windowId);
+    count = 0;
+  }
   public void setConf(MultiLayerConfiguration conf)
   {
     this.conf = conf;

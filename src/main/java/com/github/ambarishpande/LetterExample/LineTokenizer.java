@@ -25,7 +25,7 @@ public class LineTokenizer extends BaseOperator
   private int count;
   private int miniBatchSize;
   public DataSet batch;
-  public final transient DefaultOutputPort<DataSetWrapper> output = new DefaultOutputPort<>();
+  public final transient DefaultOutputPort<DataSet> output = new DefaultOutputPort<>();
   //public final transient DefaultOutputPort<String> outputNegative = new DefaultOutputPort<>();
 
   public final transient DefaultInputPort<String> input = new DefaultInputPort<String>()
@@ -65,8 +65,8 @@ public class LineTokenizer extends BaseOperator
         batch.addRow(d, count);
         count++;
       }
-      DataSetWrapper dw = new DataSetWrapper(batch);
-      output.emit(dw);
+//      DataSetWrapper dw = new DataSetWrapper(batch);
+      output.emit(d);
       count = 0;
 
     }

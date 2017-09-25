@@ -75,8 +75,6 @@ public class ModelSaverOperator extends BaseOperator
 
   public void setup(Context.OperatorContext context)
   {
-    saveLocation = "/home/hadoopuser/iris/";
-    filename = "irismodel.zip";
   }
 
   public void setFilename(String filename)
