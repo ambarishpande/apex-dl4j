@@ -1,10 +1,6 @@
 package com.github.ambarishpande.MasterWorkerModule;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
 
 import org.deeplearning4j.nn.api.Updater;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -50,23 +46,21 @@ public class Dl4jParameterAverager extends BaseOperator
 
         INDArray params = Nd4j.zeros(model.params().shape());
         INDArray updaterState = Nd4j.zeros(model.getUpdater().getStateViewArray().shape());
-        double score  = 0.0;
+        double score = 0.0;
         for (MultiLayerNetwork w : workers) {
           params = params.add(w.params());
           updaterState = updaterState.add(w.getUpdater().getStateViewArray());
-          score +=w.score();
+          score += w.score();
 
           LOG.info("Adding Worker Parameters...");
         }
         workers.clear();
-//        INDArray averagedPram = params.divi(numWorkers);
-
         params = params.divi(numWorkers);
         model.setParams(params);
 
         updaterState = updaterState.divi(numWorkers);
         Updater updater = model.getUpdater();
-        updater.setStateViewArray(model,updaterState,false);
+        updater.setStateViewArray(model, updaterState, false);
 
         score /= numWorkers;
 

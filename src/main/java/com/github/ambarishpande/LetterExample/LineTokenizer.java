@@ -10,13 +10,10 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.ambarishpande.MasterWorkerModule.DataSetWrapper;
-
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.common.util.BaseOperator;
-//import org.nd4j.linalg.dataset.Dataset;
 
 public class LineTokenizer extends BaseOperator
 {

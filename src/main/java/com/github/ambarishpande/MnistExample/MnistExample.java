@@ -15,7 +15,6 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.apache.hadoop.conf.Configuration;
 
 import com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec;
-import com.github.ambarishpande.MasterWorkerModule.Dl4jEvaluatorOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jMasterOperator;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jParameterAverager;
 import com.github.ambarishpande.MasterWorkerModule.Dl4jWorkerOperator;

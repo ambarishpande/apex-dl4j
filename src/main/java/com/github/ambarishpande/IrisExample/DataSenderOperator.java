@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
-import com.github.ambarishpande.MasterWorkerModule.DataSetWrapper;
 
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultOutputPort;
@@ -36,8 +35,6 @@ public class DataSenderOperator implements InputOperator
     if (tuplesPerWindow > count) {
       try {
         d = dataSetIterator.next();
-//      LOG.info("Sending Data : " + d.toString());
-//        DataSetWrapper dw = new DataSetWrapper(d);
         outputData.emit(d);
         count++;
       } catch (Exception e) {
@@ -68,7 +65,6 @@ public class DataSenderOperator implements InputOperator
   public void setup(Context.OperatorContext context)
   {
     dataSetIterator = new IrisDataSetIterator(sendBatchSize, 150);
-//    numEpochs = 2000;
     LOG.info("Number of examples  :" + dataSetIterator.numExamples());
     LOG.info("iris dataset loaded...");
     d = new DataSet();
