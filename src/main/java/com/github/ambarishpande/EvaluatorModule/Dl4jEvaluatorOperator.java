@@ -27,9 +27,9 @@ import com.datatorrent.common.util.BaseOperator;
  *
  * Created by @ambarishpande on 27/2/17.
  */
-public class GenericEvaluatorOperator extends BaseOperator
+public class Dl4jEvaluatorOperator extends BaseOperator
 {
-  private static final Logger LOG = LoggerFactory.getLogger(GenericEvaluatorOperator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Dl4jEvaluatorOperator.class);
 
   private int numClasses;
   private String modelFileName;

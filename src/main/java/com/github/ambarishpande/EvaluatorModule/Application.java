@@ -21,7 +21,7 @@ public class Application implements StreamingApplication
   public void populateDAG(DAG dag, Configuration configuration)
   {
     DataSenderOperator data = dag.addOperator("Data", DataSenderOperator.class);
-    GenericEvaluatorOperator eval = dag.addOperator("Eval", GenericEvaluatorOperator.class);
+    Dl4jEvaluatorOperator eval = dag.addOperator("Eval", Dl4jEvaluatorOperator.class);
     dag.addStream("Data-Evaluation", data.outputData, eval.input);
 
   }

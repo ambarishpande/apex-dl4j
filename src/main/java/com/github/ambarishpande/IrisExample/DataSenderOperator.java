@@ -14,6 +14,7 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.InputOperator;
 
 /**
+ * Operator to send
  * Created by @ambarishpande on 17/1/17.
  */
 public class DataSenderOperator implements InputOperator
