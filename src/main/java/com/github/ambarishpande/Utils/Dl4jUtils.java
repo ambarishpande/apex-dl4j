@@ -73,4 +73,19 @@ public class Dl4jUtils
 
     return false;
   }
+
+  /**
+   * Method to return the best probable class.
+   * @param probabilities
+   * @return
+   */
+  public static int maxIndex(double[] probabilities) {
+    int best = 0;
+    for (int i = 1; i < probabilities.length; ++i) {
+      if (probabilities[i] > probabilities[best]) {
+        best = i;
+      }
+    }
+    return best;
+  }
 }
