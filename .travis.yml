@@ -1,0 +1,9 @@
+language: java
+
+jdk:
+  - openjdk7
+
+#skip default installation step (mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V)
+install: true
+
+script: mvn clean package -B -V -q  -DskipTests
