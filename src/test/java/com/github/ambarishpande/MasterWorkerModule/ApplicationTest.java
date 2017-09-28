@@ -91,28 +91,21 @@ public class ApplicationTest {
   public void scorerTest(){
 
     CountAndLastTupleTestSink sink = new CountAndLastTupleTestSink();
-    CountAndLastTupleTestSink sink2 = new CountAndLastTupleTestSink();
 
     DataSetIterator dataSetIterator = new IrisDataSetIterator(1,150);
     Dl4jScoringOperator scorer = new Dl4jScoringOperator();
     scorer.setModelFilePath("src/test/resources/models/");
     scorer.setModelFileName("25-09-17-11-58-06-iris.zip");
     scorer.setup(null);
-    scorer.allScores.setSink(sink);
-    scorer.bestClass.setSink(sink2);
     scorer.beginWindow(0);
+    scorer.scoredDataset.setSink(sink);
     DataSet x = dataSetIterator.next();
     scorer.input.process(x);
-    scorer.feedback.process(dataSetIterator.next());
     scorer.endWindow();
-    double[] pros = (double[]) sink.tuple;
-    String result = "";
-    for (int i = 0; i<pros.length;i++){
-      result += pros[i] + " ";
-    }
+    DataSet result = (DataSet) sink.tuple;
 
-    Assert.assertEquals("0.9873569011688232 0.010931925848126411 0.0017111020861193538 ",result);
-    Assert.assertEquals(new Integer(0),(Integer) sink2.tuple);
+    Assert.assertNotSame(x.getLabels(),result.getLabels());
+    Assert.assertEquals(x.outcome(),result.outcome());
 
   }
 }

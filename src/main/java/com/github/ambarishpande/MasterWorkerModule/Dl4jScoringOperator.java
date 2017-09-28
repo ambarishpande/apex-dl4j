@@ -33,8 +33,6 @@ public class Dl4jScoringOperator extends BaseOperator
   private String modelFilePath;
   private String modelFileName;
 
-  public transient DefaultOutputPort<double[]> allScores = new DefaultOutputPort<>();
-  public transient DefaultOutputPort<Integer> bestClass = new DefaultOutputPort<>();
   public transient DefaultOutputPort<DataSet> scoredDataset = new DefaultOutputPort<>();
 
   public transient DefaultInputPort<DataSet> input = new DefaultInputPort<DataSet>()
@@ -50,8 +48,6 @@ public class Dl4jScoringOperator extends BaseOperator
       DataSet scored = dataSet.copy();
       scored.setLabels(scores);
       scoredDataset.emit(scored);
-      allScores.emit(probabilities);
-      bestClass.emit(Dl4jUtils.maxIndex(probabilities));
     }
   };
 
