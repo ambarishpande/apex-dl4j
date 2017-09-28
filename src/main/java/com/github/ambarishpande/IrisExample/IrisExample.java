@@ -29,7 +29,9 @@ import com.datatorrent.common.partitioner.StatelessPartitioner;
 import com.datatorrent.common.util.DefaultDelayOperator;
 
 /**
- * Created by hadoopuser on 8/4/17.
+ * Iris Dataset Training Example
+ *
+ * Created by @ambarishpande on 8/4/17.
  */
 
 @ApplicationAnnotation(name = "IrisExample")
@@ -51,20 +53,8 @@ public class IrisExample implements StreamingApplication
     RoundRobinStreamCodec rrCodec = new RoundRobinStreamCodec();
     rrCodec.setN(numWorkers);
 
-    CustomSerializableStreamCodec<MultiLayerNetwork> codecMLN = new CustomSerializableStreamCodec<MultiLayerNetwork>();
-    CustomSerializableStreamCodec<DataSet> codecDataSet = new CustomSerializableStreamCodec<DataSet>();
-
     dag.setOperatorAttribute(Worker, Context.OperatorContext.PARTITIONER, new StatelessPartitioner<Dl4jWorkerOperator>(numWorkers));
     dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, rrCodec);
-
-    dag.setInputPortAttribute(saver.modelInput, Context.PortContext.STREAM_CODEC, codecMLN);
-    dag.setInputPortAttribute(ParameterAverager.inputPara, Context.PortContext.STREAM_CODEC, codecMLN);
-    dag.setInputPortAttribute(Master.finalParameters, Context.PortContext.STREAM_CODEC, codecMLN);
-    dag.setInputPortAttribute(Worker.controlPort, Context.PortContext.STREAM_CODEC, codecMLN);
-    dag.setInputPortAttribute(delay.input, Context.PortContext.STREAM_CODEC, codecMLN);
-
-    dag.setInputPortAttribute(Master.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
-//    dag.setInputPortAttribute(Worker.dataPort, Context.PortContext.STREAM_CODEC, codecDataSet);
 
     dag.addStream("Data:InputData-Master", inputData.outputData, Master.dataPort);
     dag.addStream("Data:Master-Worker", Master.outputData, Worker.dataPort);

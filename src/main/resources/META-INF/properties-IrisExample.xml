@@ -15,7 +15,17 @@
 
   <property>
     <name>dt.application.*.attr.CONTAINER_JVM_OPTIONS</name>
-    <value>-Xms2g -Xmx2g -XX:+UseG1GC </value>
+    <value>-Xmx2g -XX:+UseG1GC </value>
+  </property>
+
+  <property>
+    <name>dt.application.IrisExample.operator.*.attr.MEMORY_MB</name>
+    <value>512</value>
+  </property>
+
+  <property>
+    <name>dt.application.IrisExample.operator.*.port.*.attr.BUFFER_MEMORY_MB</name>
+    <value>128</value>
   </property>
 
   <property>
@@ -30,12 +40,12 @@
 
   <property>
     <name>dt.application.IrisExample.operator.Master.prop.saveLocation</name>
-    <value>/home/hadoopuser/iris/</value>
+    <value>/user/ambarish/iris/</value>
   </property>
 
   <property>
     <name>dt.application.IrisExample.operator.Master.prop.filename</name>
-    <value>iris3.zip</value>
+    <value>iris.zip</value>
   </property>
 
   <property>
@@ -57,5 +67,11 @@
     <name>dt.application.IrisExample.operator.inputData.prop.sendBatchSize</name>
     <value>1</value>
   </property>
+
+  <property>
+    <name>dt.application.IrisExample.operator.*.port.*.attr.STREAM_CODEC</name>
+    <value>com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec</value>
+  </property>
+
 </configuration>
 
