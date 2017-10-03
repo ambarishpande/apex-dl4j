@@ -14,11 +14,9 @@
 
   <properties>
     <!-- change this if you desire to use a different version of Apex Core -->
-    <apex.version>3.5.0</apex.version>
+    <apex.version>3.7.0-SNAPSHOT</apex.version>
     <apex.apppackage.classpath>lib/*.jar</apex.apppackage.classpath>
-    <apex.version>3.5.0</apex.version>
-    <apex.apppackage.classpath>lib/*.jar</apex.apppackage.classpath>
-    <malhar.version>3.5.0</malhar.version>
+    <malhar.version>3.8.0-SNAPSHOT</malhar.version>
     <nd4j.backend>nd4j-native-platform</nd4j.backend>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <shadedClassifier>bin</shadedClassifier>
