@@ -29,7 +29,7 @@
   </property>
 
   <property>
-    <name>dt.application.IrisExample.operator.Worker.prop.batchSize</name>
+    <name>dt.application.IrisExample.operator.TrainingModule.prop.batchSize</name>
     <value>16</value>
   </property>
 
@@ -39,22 +39,12 @@
   </property>
 
   <property>
-    <name>dt.application.IrisExample.operator.Master.prop.saveLocation</name>
-    <value>/user/ambarish/iris/</value>
-  </property>
-
-  <property>
-    <name>dt.application.IrisExample.operator.Master.prop.filename</name>
-    <value>iris.zip</value>
-  </property>
-
-  <property>
-    <name>dt.application.IrisExample.operator.ParameterAverager.prop.numWorkers</name>
+    <name>dt.application.IrisExample.operator.TrainingModule.prop.numWorkers</name>
     <value>2</value>
   </property>
 
   <property>
-    <name>dt.application.IrisExample.operator.Master.prop.numOfClasses</name>
+    <name>dt.application.IrisExample.operator.TrainingModule.prop.numOfClasses</name>
     <value>3</value>
   </property>
 
@@ -68,10 +58,239 @@
     <value>1</value>
   </property>
 
-  <property>
-    <name>dt.application.IrisExample.operator.*.port.*.attr.STREAM_CODEC</name>
-    <value>com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec</value>
+ <property>
+    <name>dt.application.IrisExample.operator.TrainingModule.prop.jsonConf</name>
+    <value>
+      {
+      "backprop" : true,
+      "backpropType" : "Standard",
+      "confs" : [ {
+      "iterationCount" : 0,
+      "l1ByParam" : { },
+      "l2ByParam" : { },
+      "layer" : {
+      "dense" : {
+      "activationFn" : {
+      "ReLU" : { }
+      },
+      "adamMeanDecay" : "NaN",
+      "adamVarDecay" : "NaN",
+      "biasInit" : 0.0,
+      "biasLearningRate" : 0.0015,
+      "dist" : null,
+      "dropOut" : 0.0,
+      "epsilon" : "NaN",
+      "gradientNormalization" : "None",
+      "gradientNormalizationThreshold" : 1.0,
+      "l1" : 0.0,
+      "l1Bias" : 0.0,
+      "l2" : 0.0,
+      "l2Bias" : 0.0,
+      "layerName" : "layer0",
+      "learningRate" : 0.0015,
+      "learningRateSchedule" : null,
+      "momentum" : 0.9,
+      "momentumSchedule" : { },
+      "nin" : 4,
+      "nout" : 10,
+      "rho" : "NaN",
+      "rmsDecay" : "NaN",
+      "updater" : "NESTEROVS",
+      "weightInit" : "XAVIER"
+      }
+      },
+      "leakyreluAlpha" : 0.0,
+      "learningRateByParam" : { },
+      "learningRatePolicy" : "None",
+      "lrPolicyDecayRate" : "NaN",
+      "lrPolicyPower" : "NaN",
+      "lrPolicySteps" : "NaN",
+      "maxNumLineSearchIterations" : 5,
+      "miniBatch" : true,
+      "minimize" : true,
+      "numIterations" : 2,
+      "optimizationAlgo" : "STOCHASTIC_GRADIENT_DESCENT",
+      "pretrain" : false,
+      "seed" : 123,
+      "stepFunction" : null,
+      "useDropConnect" : false,
+      "useRegularization" : false,
+      "variables" : [ ]
+      }, {
+      "iterationCount" : 0,
+      "l1ByParam" : { },
+      "l2ByParam" : { },
+      "layer" : {
+      "dense" : {
+      "activationFn" : {
+      "ReLU" : { }
+      },
+      "adamMeanDecay" : "NaN",
+      "adamVarDecay" : "NaN",
+      "biasInit" : 0.0,
+      "biasLearningRate" : 0.0015,
+      "dist" : null,
+      "dropOut" : 0.0,
+      "epsilon" : "NaN",
+      "gradientNormalization" : "None",
+      "gradientNormalizationThreshold" : 1.0,
+      "l1" : 0.0,
+      "l1Bias" : 0.0,
+      "l2" : 0.0,
+      "l2Bias" : 0.0,
+      "layerName" : "layer1",
+      "learningRate" : 0.0015,
+      "learningRateSchedule" : null,
+      "momentum" : 0.9,
+      "momentumSchedule" : { },
+      "nin" : 10,
+      "nout" : 20,
+      "rho" : "NaN",
+      "rmsDecay" : "NaN",
+      "updater" : "NESTEROVS",
+      "weightInit" : "XAVIER"
+      }
+      },
+      "leakyreluAlpha" : 0.0,
+      "learningRateByParam" : { },
+      "learningRatePolicy" : "None",
+      "lrPolicyDecayRate" : "NaN",
+      "lrPolicyPower" : "NaN",
+      "lrPolicySteps" : "NaN",
+      "maxNumLineSearchIterations" : 5,
+      "miniBatch" : true,
+      "minimize" : true,
+      "numIterations" : 2,
+      "optimizationAlgo" : "STOCHASTIC_GRADIENT_DESCENT",
+      "pretrain" : false,
+      "seed" : 123,
+      "stepFunction" : null,
+      "useDropConnect" : false,
+      "useRegularization" : false,
+      "variables" : [ ]
+      }, {
+      "iterationCount" : 0,
+      "l1ByParam" : { },
+      "l2ByParam" : { },
+      "layer" : {
+      "dense" : {
+      "activationFn" : {
+      "Sigmoid" : { }
+      },
+      "adamMeanDecay" : "NaN",
+      "adamVarDecay" : "NaN",
+      "biasInit" : 0.0,
+      "biasLearningRate" : 0.0015,
+      "dist" : null,
+      "dropOut" : 0.0,
+      "epsilon" : "NaN",
+      "gradientNormalization" : "None",
+      "gradientNormalizationThreshold" : 1.0,
+      "l1" : 0.0,
+      "l1Bias" : 0.0,
+      "l2" : 0.0,
+      "l2Bias" : 0.0,
+      "layerName" : "layer2",
+      "learningRate" : 0.0015,
+      "learningRateSchedule" : null,
+      "momentum" : 0.9,
+      "momentumSchedule" : { },
+      "nin" : 20,
+      "nout" : 10,
+      "rho" : "NaN",
+      "rmsDecay" : "NaN",
+      "updater" : "NESTEROVS",
+      "weightInit" : "XAVIER"
+      }
+      },
+      "leakyreluAlpha" : 0.0,
+      "learningRateByParam" : { },
+      "learningRatePolicy" : "None",
+      "lrPolicyDecayRate" : "NaN",
+      "lrPolicyPower" : "NaN",
+      "lrPolicySteps" : "NaN",
+      "maxNumLineSearchIterations" : 5,
+      "miniBatch" : true,
+      "minimize" : true,
+      "numIterations" : 2,
+      "optimizationAlgo" : "STOCHASTIC_GRADIENT_DESCENT",
+      "pretrain" : false,
+      "seed" : 123,
+      "stepFunction" : null,
+      "useDropConnect" : false,
+      "useRegularization" : false,
+      "variables" : [ ]
+      }, {
+      "iterationCount" : 0,
+      "l1ByParam" : { },
+      "l2ByParam" : { },
+      "layer" : {
+      "output" : {
+      "activationFn" : {
+      "Softmax" : { }
+      },
+      "adamMeanDecay" : "NaN",
+      "adamVarDecay" : "NaN",
+      "biasInit" : 0.0,
+      "biasLearningRate" : 0.0015,
+      "dist" : null,
+      "dropOut" : 0.0,
+      "epsilon" : "NaN",
+      "gradientNormalization" : "None",
+      "gradientNormalizationThreshold" : 1.0,
+      "l1" : 0.0,
+      "l1Bias" : 0.0,
+      "l2" : 0.0,
+      "l2Bias" : 0.0,
+      "layerName" : "layer3",
+      "learningRate" : 0.0015,
+      "learningRateSchedule" : null,
+      "lossFn" : {
+      "NegativeLogLikelihood" : { }
+      },
+      "lossFunction" : "NEGATIVELOGLIKELIHOOD",
+      "momentum" : 0.9,
+      "momentumSchedule" : { },
+      "nin" : 10,
+      "nout" : 3,
+      "rho" : "NaN",
+      "rmsDecay" : "NaN",
+      "updater" : "NESTEROVS",
+      "weightInit" : "UNIFORM"
+      }
+      },
+      "leakyreluAlpha" : 0.0,
+      "learningRateByParam" : { },
+      "learningRatePolicy" : "None",
+      "lrPolicyDecayRate" : "NaN",
+      "lrPolicyPower" : "NaN",
+      "lrPolicySteps" : "NaN",
+      "maxNumLineSearchIterations" : 5,
+      "miniBatch" : true,
+      "minimize" : true,
+      "numIterations" : 2,
+      "optimizationAlgo" : "STOCHASTIC_GRADIENT_DESCENT",
+      "pretrain" : false,
+      "seed" : 123,
+      "stepFunction" : null,
+      "useDropConnect" : false,
+      "useRegularization" : false,
+      "variables" : [ ]
+      } ],
+      "inputPreProcessors" : { },
+      "iterationCount" : 0,
+      "pretrain" : false,
+      "tbpttBackLength" : 20,
+      "tbpttFwdLength" : 20
+      }
+    </value>
   </property>
+
+
+  <!--<property>-->
+    <!--<name>dt.application.IrisExample.operator.*.port.*.attr.STREAM_CODEC</name>-->
+    <!--<value>com.github.ambarishpande.MasterWorkerModule.CustomSerializableStreamCodec</value>-->
+  <!--</property>-->
 
 </configuration>
 

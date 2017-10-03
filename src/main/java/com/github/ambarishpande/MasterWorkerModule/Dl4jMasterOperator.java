@@ -29,9 +29,6 @@ public class Dl4jMasterOperator extends BaseOperator
   private MultiLayerConfiguration conf;
   @FieldSerializer.Bind(JavaSerializer.class)
   private MultiLayerNetwork model;
-  private String filename;
-  @AutoMetric
-  private String saveLocation;
   private boolean first;
   private Evaluation eval;
   private double startTime;
@@ -98,25 +95,11 @@ public class Dl4jMasterOperator extends BaseOperator
 
   }
 
-  public void setFilename(String filename)
-  {
-    this.filename = filename;
-  }
-
   public void setConf(MultiLayerConfiguration conf)
   {
     this.conf = conf;
   }
 
-  public String getSaveLocation()
-  {
-    return saveLocation;
-  }
-
-  public void setSaveLocation(String saveLocation)
-  {
-    this.saveLocation = saveLocation;
-  }
 
   public int getNumOfClasses()
   {
