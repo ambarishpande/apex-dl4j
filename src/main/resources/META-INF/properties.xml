@@ -29,16 +29,6 @@
   </property>
 
   <property>
-    <name>dt.application.MasterWorkerModule.operator.Master.prop.saveLocation</name>
-    <value>/home/hadoopuser/iris/</value>
-  </property>
-
-  <property>
-    <name>dt.application.MasterWorkerModule.operator.Master.prop.filename</name>
-    <value>iris3.zip</value>
-  </property>
-
-  <property>
     <name>dt.application.MasterWorkerModule.operator.ParameterAverager.prop.numWorkers</name>
     <value>2</value>
   </property>
